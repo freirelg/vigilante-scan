@@ -36,7 +36,7 @@ const Index = () => {
       case "install":
         return "Instalar App";
       default:
-        return "SecureGuard";
+        return "Freirenet-SecureGuard";
     }
   };
 
@@ -56,8 +56,8 @@ const Index = () => {
               <ShieldCheck className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-foreground">SecureGuard</h1>
-              <p className="text-xs text-muted-foreground">Proteção completa</p>
+              <h1 className="font-bold text-foreground">Freirenet</h1>
+              <p className="text-xs text-muted-foreground">SecureGuard</p>
             </div>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10">
