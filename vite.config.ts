@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt"],
       manifest: {
-        name: "SecureGuard - Proteção Mobile",
-        short_name: "SecureGuard",
+        name: "Freirenet-SecureGuard",
+        short_name: "Freirenet",
         description: "Scanner de segurança, otimização e análise de senhas para seu dispositivo",
         theme_color: "#0d1117",
         background_color: "#0d1117",
