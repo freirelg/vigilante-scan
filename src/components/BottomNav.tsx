@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Shield, Zap, Lock, Wifi, Download } from "lucide-react";
+import { Shield, Zap, Lock, Wifi, Gauge } from "lucide-react";
 
 interface BottomNavProps {
   activeTab: string;
@@ -7,11 +7,11 @@ interface BottomNavProps {
 }
 
 const tabs = [
+  { id: "score", label: "Score", icon: Gauge },
   { id: "scan", label: "Scanner", icon: Shield },
   { id: "optimize", label: "Otimizar", icon: Zap },
   { id: "password", label: "Senhas", icon: Lock },
   { id: "network", label: "Rede", icon: Wifi },
-  { id: "install", label: "Instalar", icon: Download },
 ];
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {

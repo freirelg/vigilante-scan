@@ -5,14 +5,17 @@ import { SecurityScanner } from "@/components/SecurityScanner";
 import { DeviceOptimizer } from "@/components/DeviceOptimizer";
 import { PasswordAnalyzer } from "@/components/PasswordAnalyzer";
 import { NetworkSecurity } from "@/components/NetworkSecurity";
+import { VulnerabilityScore } from "@/components/VulnerabilityScore";
 import { BottomNav } from "@/components/BottomNav";
 import { InstallPrompt } from "@/components/InstallPrompt";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("scan");
+  const [activeTab, setActiveTab] = useState("score");
 
   const renderContent = () => {
     switch (activeTab) {
+      case "score":
+        return <VulnerabilityScore />;
       case "scan":
         return <SecurityScanner />;
       case "optimize":
@@ -24,12 +27,14 @@ const Index = () => {
       case "install":
         return <InstallPrompt />;
       default:
-        return <SecurityScanner />;
+        return <VulnerabilityScore />;
     }
   };
 
   const getTitle = () => {
     switch (activeTab) {
+      case "score":
+        return "Score de Vulnerabilidade";
       case "scan":
         return "Scanner de Segurança";
       case "optimize":
