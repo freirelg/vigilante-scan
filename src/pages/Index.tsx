@@ -4,6 +4,7 @@ import { Shield, ShieldCheck } from "lucide-react";
 import { SecurityScanner } from "@/components/SecurityScanner";
 import { DeviceOptimizer } from "@/components/DeviceOptimizer";
 import { PasswordAnalyzer } from "@/components/PasswordAnalyzer";
+import { NetworkSecurity } from "@/components/NetworkSecurity";
 import { BottomNav } from "@/components/BottomNav";
 import { InstallPrompt } from "@/components/InstallPrompt";
 
@@ -18,6 +19,8 @@ const Index = () => {
         return <DeviceOptimizer />;
       case "password":
         return <PasswordAnalyzer />;
+      case "network":
+        return <NetworkSecurity />;
       case "install":
         return <InstallPrompt />;
       default:
@@ -33,6 +36,8 @@ const Index = () => {
         return "Otimização";
       case "password":
         return "Analisador de Senhas";
+      case "network":
+        return "Segurança de Rede";
       case "install":
         return "Instalar App";
       default:
