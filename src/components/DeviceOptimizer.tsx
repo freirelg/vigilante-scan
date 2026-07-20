@@ -283,3 +283,151 @@ export function DeviceOptimizer() {
     </div>
   );
 }
+
+// ---------- Live cards: Network + Battery ----------
+function LiveNetworkBattery({
+  network,
+  battery,
+}: {
+  network: NetworkInfo | null;
+  battery: BatteryInfo | null;
+}) {
+  // ---- Network derived state ----
+  const online = network?.online ?? navigator.onLine;
+  const eff = network?.effectiveType ?? null;
+  const rtt = network?.rttMs ?? null;
+  const dl = network?.downlinkMbps ?? null;
+
+  const netQuality: { label: string; tone: "success" | "warning" | "destructive"; tip: string } =
+    !online
+      ? { label: "Offline", tone: "destructive", tip: "Sem conexão — funcionalidades online desativadas." }
+      : eff === "4g" && (rtt == null || rtt < 200)
+      ? { label: "Rápida", tone: "success", tip: "Conexão saudável para tráfego pesado." }
+      : eff === "3g" || (rtt != null && rtt >= 200 && rtt < 500)
+      ? { label: "Moderada", tone: "warning", tip: "Ative Save-Data e evite streams em alta qualidade." }
+      : eff === "2g" || eff === "slow-2g" || (rtt != null && rtt >= 500)
+      ? { label: "Lenta", tone: "destructive", tip: "Latência alta — considere ativar modo economia de dados." }
+      : { label: "Ativa", tone: "success", tip: "Conexão detectada." };
+
+  const toneClass = (tone: "success" | "warning" | "destructive") =>
+    tone === "success"
+      ? "text-success bg-success/10 border-success/30"
+      : tone === "warning"
+      ? "text-warning bg-warning/10 border-warning/30"
+      : "text-destructive bg-destructive/10 border-destructive/30";
+
+  // ---- Battery derived state ----
+  const level = battery?.level != null ? Math.round(battery.level * 100) : null;
+  const charging = battery?.charging ?? false;
+  const BatteryIcon =
+    charging ? BatteryCharging
+    : level == null ? BatteryFull
+    : level < 20 ? BatteryLow
+    : level < 60 ? BatteryMedium
+    : BatteryFull;
+
+  const batTone: "success" | "warning" | "destructive" =
+    level == null ? "success"
+    : charging ? "success"
+    : level < 20 ? "destructive"
+    : level < 40 ? "warning"
+    : "success";
+
+  const batTip =
+    battery?.supported === false
+      ? "Battery API não disponível neste navegador (iOS/Firefox)."
+      : charging
+      ? battery?.chargingTimeSec
+        ? `Carregando — ${formatDuration(battery.chargingTimeSec)} até 100%`
+        : "Carregando"
+      : battery?.dischargingTimeSec
+      ? `Descarregando — ${formatDuration(battery.dischargingTimeSec)} restantes`
+      : "Modo descarga";
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* NETWORK */}
+      <motion.div
+        className="glass-card p-4"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-start gap-3">
+          <div className={`p-2 rounded-lg border ${toneClass(netQuality.tone)}`}>
+            {online ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-medium text-foreground">Conexão</p>
+              <Badge variant="outline" className={`text-[10px] ${toneClass(netQuality.tone)}`}>
+                {netQuality.label}
+              </Badge>
+            </div>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Signal className="w-3 h-3" />
+                {eff ? eff.toUpperCase() : "—"}
+              </span>
+              <span className="tabular-nums">↓ {dl != null ? `${dl.toFixed(1)} Mbps` : "—"}</span>
+              <span className="tabular-nums">RTT {rtt != null ? `${rtt} ms` : "—"}</span>
+            </div>
+            {network?.saveData && (
+              <Badge variant="outline" className="mt-2 text-[10px] border-primary/40 text-primary">
+                Save-Data ativo
+              </Badge>
+            )}
+            <p className="text-[11px] text-muted-foreground/80 mt-2">{netQuality.tip}</p>
+            {!network?.supported && (
+              <p className="text-[10px] text-muted-foreground/60 mt-1">
+                Network Information API não suportada — dados limitados.
+              </p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* BATTERY */}
+      <motion.div
+        className="glass-card p-4"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+      >
+        <div className="flex items-start gap-3">
+          <div className={`p-2 rounded-lg border ${toneClass(batTone)}`}>
+            <BatteryIcon className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-medium text-foreground">Bateria</p>
+              <Badge variant="outline" className={`text-[10px] ${toneClass(batTone)}`}>
+                {level != null ? `${level}%` : "N/D"}
+              </Badge>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
+              <motion.div
+                className={
+                  batTone === "success" ? "h-full bg-success"
+                  : batTone === "warning" ? "h-full bg-warning"
+                  : "h-full bg-destructive"
+                }
+                initial={{ width: 0 }}
+                animate={{ width: `${level ?? 0}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground/80 mt-2 flex items-center gap-1">
+              {charging && <Gauge className="w-3 h-3 text-success" />}
+              {batTip}
+            </p>
+            {level != null && !charging && level < 20 && (
+              <p className="text-[11px] text-destructive mt-1">
+                ⚠ Bateria crítica — ative modo economia do sistema.
+              </p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
