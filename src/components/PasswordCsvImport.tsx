@@ -114,11 +114,33 @@ export function PasswordCsvImport({ onImport }: Props) {
 
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
 
+  const [dragOver, setDragOver] = useState(false);
+
   return (
     <motion.div
-      className="glass-card p-6"
+      className={`glass-card p-6 cursor-pointer transition-all ${
+        dragOver ? "border-primary bg-primary/5 ring-2 ring-primary/40" : ""
+      } ${busy ? "cursor-wait opacity-90" : "hover:border-primary/40"}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      onClick={() => !busy && inputRef.current?.click()}
+      onDragOver={(e) => { e.preventDefault(); if (!busy) setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        if (busy) return;
+        const f = e.dataTransfer.files?.[0];
+        if (f) handleFile(f);
+      }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && !busy) {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
     >
       <div className="flex items-center gap-3 mb-3">
         <div className="p-2 rounded-lg bg-accent/20">
@@ -126,7 +148,9 @@ export function PasswordCsvImport({ onImport }: Props) {
         </div>
         <div>
           <h3 className="font-semibold text-foreground">Importar cofre do navegador</h3>
-          <p className="text-sm text-muted-foreground">Audita todas as senhas de uma vez</p>
+          <p className="text-sm text-muted-foreground">
+            {dragOver ? "Solte o arquivo aqui" : "Clique em qualquer lugar ou arraste um CSV"}
+          </p>
         </div>
       </div>
 
@@ -155,19 +179,17 @@ export function PasswordCsvImport({ onImport }: Props) {
         }}
       />
 
-      <Button
-        onClick={() => inputRef.current?.click()}
-        disabled={busy}
-        className="w-full"
-        size="lg"
-        variant="outline"
+      <div
+        className={`w-full h-12 rounded-md border-2 border-dashed flex items-center justify-center text-sm font-medium ${
+          busy ? "border-primary/30 text-muted-foreground" : "border-primary/40 text-primary"
+        }`}
       >
         {busy ? (
-          <><Loader2 className="w-5 h-5 animate-spin" /> Auditando {progress.done}/{progress.total} ({pct}%)</>
+          <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Auditando {progress.done}/{progress.total} ({pct}%)</>
         ) : (
-          <><Upload className="w-5 h-5" /> Selecionar arquivo CSV</>
+          <><Upload className="w-5 h-5 mr-2" /> Clique ou arraste o CSV aqui</>
         )}
-      </Button>
+      </div>
     </motion.div>
   );
 }
