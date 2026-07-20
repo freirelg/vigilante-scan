@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, EyeOff, Lock, Shield, AlertTriangle, CheckCircle,
@@ -64,6 +64,16 @@ export function PasswordAnalyzer() {
   const [showCustomPassword, setShowCustomPassword] = useState(false);
   const [customPwned, setCustomPwned] = useState<{ pwned: boolean; count: number } | null>(null);
   const [customChecking, setCustomChecking] = useState(false);
+
+  // Persist audit summary for VulnerabilityScore
+  useEffect(() => {
+    if (audited.length === 0) return;
+    const weak = audited.filter((p) => p.strength < 60 || p.pwned).length;
+    localStorage.setItem(
+      "last-password-audit",
+      JSON.stringify({ weak, total: audited.length, at: Date.now() }),
+    );
+  }, [audited]);
 
   const addPassword = async () => {
     if (!newService.trim() || !newPassword) {
