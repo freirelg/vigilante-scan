@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Eye, EyeOff, Lock, Shield, AlertTriangle, CheckCircle, X, 
-  Copy, RefreshCw, Search, Lightbulb, ChevronRight 
+import {
+  Eye, EyeOff, Lock, Shield, AlertTriangle, CheckCircle,
+  Copy, RefreshCw, Search, Lightbulb, ChevronRight, ShieldAlert, Loader2, Trash2, Plus, Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { checkPasswordPwned } from "@/lib/hibp";
 
 interface PasswordCheck {
   label: string;
@@ -14,156 +15,168 @@ interface PasswordCheck {
   suggestion?: string;
 }
 
-interface SavedPassword {
+interface AuditedPassword {
   id: string;
   service: string;
   password: string;
   strength: number;
   issues: string[];
   suggestions: string[];
+  pwned: boolean;
+  pwnedCount: number;
+  checking: boolean;
 }
 
 const analyzePasswordStrength = (password: string) => {
   const checks: PasswordCheck[] = [
-    { 
-      label: "Mínimo 8 caracteres", 
-      passed: password.length >= 8,
-      suggestion: "Adicione mais caracteres para aumentar a segurança"
-    },
-    { 
-      label: "Letra maiúscula", 
-      passed: /[A-Z]/.test(password),
-      suggestion: "Inclua pelo menos uma letra maiúscula (A-Z)"
-    },
-    { 
-      label: "Letra minúscula", 
-      passed: /[a-z]/.test(password),
-      suggestion: "Inclua pelo menos uma letra minúscula (a-z)"
-    },
-    { 
-      label: "Número", 
-      passed: /[0-9]/.test(password),
-      suggestion: "Adicione números para fortalecer a senha"
-    },
-    { 
-      label: "Caractere especial", 
-      passed: /[!@#$%^&*(),.?":{}|<>]/.test(password),
-      suggestion: "Use caracteres especiais como !@#$%&*"
-    },
-    { 
-      label: "Sem sequências comuns", 
-      passed: !/(123|abc|qwerty|password|senha)/i.test(password),
-      suggestion: "Evite sequências previsíveis como 123, abc ou 'senha'"
-    },
+    { label: "Mínimo 8 caracteres", passed: password.length >= 8, suggestion: "Use pelo menos 12 caracteres" },
+    { label: "Letra maiúscula", passed: /[A-Z]/.test(password), suggestion: "Inclua uma letra maiúscula (A-Z)" },
+    { label: "Letra minúscula", passed: /[a-z]/.test(password), suggestion: "Inclua uma letra minúscula (a-z)" },
+    { label: "Número", passed: /[0-9]/.test(password), suggestion: "Adicione números" },
+    { label: "Caractere especial", passed: /[!@#$%^&*(),.?":{}|<>]/.test(password), suggestion: "Use símbolos como !@#$%&*" },
+    { label: "Sem sequências comuns", passed: !/(123|abc|qwerty|password|senha|admin)/i.test(password), suggestion: "Evite palavras/sequências óbvias" },
   ];
-  
-  const passedChecks = checks.filter((c) => c.passed).length;
-  const strength = (passedChecks / checks.length) * 100;
-  const issues = checks.filter(c => !c.passed).map(c => c.label);
-  const suggestions = checks.filter(c => !c.passed && c.suggestion).map(c => c.suggestion!);
-  
+  const passed = checks.filter((c) => c.passed).length;
+  const strength = (passed / checks.length) * 100;
+  const issues = checks.filter((c) => !c.passed).map((c) => c.label);
+  const suggestions = checks.filter((c) => !c.passed && c.suggestion).map((c) => c.suggestion!);
   return { checks, strength, issues, suggestions };
 };
 
-const generateStrongPassword = () => {
+const generateStrongPassword = (length = 16) => {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-  let password = "";
-  for (let i = 0; i < 16; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
+  const buf = new Uint32Array(length);
+  crypto.getRandomValues(buf);
+  return Array.from(buf, (n) => chars[n % chars.length]).join("");
 };
 
-// Simulated saved passwords (in a real app, these would come from a secure storage)
-const mockSavedPasswords: Omit<SavedPassword, "strength" | "issues" | "suggestions">[] = [
-  { id: "1", service: "Gmail", password: "senha123" },
-  { id: "2", service: "Facebook", password: "Fb@2024Secure!" },
-  { id: "3", service: "Instagram", password: "insta2024" },
-  { id: "4", service: "Banco Digital", password: "MinhaSenha" },
-  { id: "5", service: "Netflix", password: "N3tfl!x@2024#" },
-  { id: "6", service: "Amazon", password: "amazon123" },
-];
-
 export function PasswordAnalyzer() {
-  const [scanning, setScanning] = useState(false);
-  const [scanned, setScanned] = useState(false);
-  const [savedPasswords, setSavedPasswords] = useState<SavedPassword[]>([]);
-  const [selectedPassword, setSelectedPassword] = useState<SavedPassword | null>(null);
-  const [customPassword, setCustomPassword] = useState("");
-  const [showCustomPassword, setShowCustomPassword] = useState(false);
+  const [audited, setAudited] = useState<AuditedPassword[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
 
-  const scanPasswords = async () => {
-    setScanning(true);
-    setScanned(false);
-    setSavedPasswords([]);
-    
-    // Simulate scanning delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const analyzed = mockSavedPasswords.map(pw => {
-      const analysis = analyzePasswordStrength(pw.password);
-      return {
-        ...pw,
-        strength: analysis.strength,
-        issues: analysis.issues,
-        suggestions: analysis.suggestions,
-      };
-    });
-    
-    setSavedPasswords(analyzed);
-    setScanning(false);
-    setScanned(true);
-    
-    const weakCount = analyzed.filter(p => p.strength < 80).length;
-    if (weakCount > 0) {
-      toast.warning(`${weakCount} senha(s) precisam de atenção!`);
-    } else {
-      toast.success("Todas as senhas estão seguras!");
+  const [newService, setNewService] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [adding, setAdding] = useState(false);
+
+  const [customPassword, setCustomPassword] = useState("");
+  const [showCustomPassword, setShowCustomPassword] = useState(false);
+  const [customPwned, setCustomPwned] = useState<{ pwned: boolean; count: number } | null>(null);
+  const [customChecking, setCustomChecking] = useState(false);
+
+  const addPassword = async () => {
+    if (!newService.trim() || !newPassword) {
+      toast.error("Preencha o serviço e a senha");
+      return;
+    }
+    setAdding(true);
+    const analysis = analyzePasswordStrength(newPassword);
+    const id = crypto.randomUUID();
+    const entry: AuditedPassword = {
+      id,
+      service: newService.trim(),
+      password: newPassword,
+      strength: analysis.strength,
+      issues: analysis.issues,
+      suggestions: analysis.suggestions,
+      pwned: false,
+      pwnedCount: 0,
+      checking: true,
+    };
+    setAudited((prev) => [entry, ...prev]);
+    setNewService("");
+    setNewPassword("");
+
+    try {
+      const result = await checkPasswordPwned(newPassword);
+      setAudited((prev) =>
+        prev.map((p) =>
+          p.id === id ? { ...p, pwned: result.pwned, pwnedCount: result.count, checking: false } : p
+        )
+      );
+      if (result.pwned) {
+        toast.error(`Senha exposta em ${result.count.toLocaleString("pt-BR")} vazamentos!`);
+      } else if (analysis.strength >= 80) {
+        toast.success("Senha forte e não encontrada em vazamentos");
+      }
+    } catch {
+      setAudited((prev) => prev.map((p) => (p.id === id ? { ...p, checking: false } : p)));
+      toast.error("Não foi possível consultar a base de vazamentos");
+    } finally {
+      setAdding(false);
     }
   };
 
-  const getStrengthLabel = (strength: number) => {
-    if (strength >= 100) return "Excelente";
-    if (strength >= 80) return "Forte";
-    if (strength >= 60) return "Moderada";
-    if (strength >= 40) return "Fraca";
-    return "Muito Fraca";
+  const removePassword = (id: string) => {
+    setAudited((prev) => prev.filter((p) => p.id !== id));
+    if (selectedId === id) setSelectedId(null);
   };
 
-  const getStrengthColor = (strength: number) => {
-    if (strength >= 80) return "text-success";
-    if (strength >= 60) return "text-warning";
-    return "text-destructive";
+  const checkCustom = async () => {
+    if (!customPassword) return;
+    setCustomChecking(true);
+    setCustomPwned(null);
+    try {
+      const result = await checkPasswordPwned(customPassword);
+      setCustomPwned(result);
+      if (result.pwned) {
+        toast.error(`Senha vazada ${result.count.toLocaleString("pt-BR")} vezes!`);
+      } else {
+        toast.success("Senha não encontrada em vazamentos conhecidos");
+      }
+    } catch {
+      toast.error("Erro ao consultar HIBP");
+    } finally {
+      setCustomChecking(false);
+    }
   };
 
-  const getStrengthBg = (strength: number) => {
-    if (strength >= 80) return "bg-success";
-    if (strength >= 60) return "bg-warning";
-    return "bg-destructive";
-  };
+  const getStrengthLabel = (s: number) => (s >= 100 ? "Excelente" : s >= 80 ? "Forte" : s >= 60 ? "Moderada" : s >= 40 ? "Fraca" : "Muito Fraca");
+  const getStrengthColor = (s: number) => (s >= 80 ? "text-success" : s >= 60 ? "text-warning" : "text-destructive");
+  const getStrengthBg = (s: number) => (s >= 80 ? "bg-success" : s >= 60 ? "bg-warning" : "bg-destructive");
 
-  const copyPassword = (password: string) => {
-    navigator.clipboard.writeText(password);
+  const copyPassword = (p: string) => {
+    navigator.clipboard.writeText(p);
     toast.success("Senha copiada!");
   };
 
+  const generateAndFill = () => {
+    const p = generateStrongPassword();
+    setNewPassword(p);
+    toast.success("Senha forte gerada");
+  };
+
   const generateAndCopy = () => {
-    const newPassword = generateStrongPassword();
-    setCustomPassword(newPassword);
-    navigator.clipboard.writeText(newPassword);
+    const p = generateStrongPassword();
+    setCustomPassword(p);
+    navigator.clipboard.writeText(p);
+    setCustomPwned(null);
     toast.success("Senha forte gerada e copiada!");
   };
 
-  const togglePasswordVisibility = (id: string) => {
-    setShowPasswords(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+  const togglePasswordVisibility = (id: string) => setShowPasswords((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const customAnalysis = customPassword ? analyzePasswordStrength(customPassword) : null;
+  const weakCount = audited.filter((p) => p.strength < 80 || p.pwned).length;
 
   return (
     <div className="space-y-6">
-      {/* Scan Button */}
+      {/* Privacy note */}
+      <motion.div
+        className="glass-card p-4 flex items-start gap-3"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Suas senhas <strong className="text-foreground">nunca saem do seu dispositivo</strong>.
+          Usamos <strong className="text-foreground">k-anonimidade</strong>: só os 5 primeiros caracteres do hash SHA-1
+          são enviados ao <strong className="text-foreground">Have I Been Pwned</strong> para verificar vazamentos reais.
+        </p>
+      </motion.div>
+
+      {/* Add password to audit */}
       <motion.div
         className="glass-card p-6"
         initial={{ opacity: 0, y: 20 }}
@@ -174,34 +187,48 @@ export function PasswordAnalyzer() {
             <Search className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Analisar Senhas do Dispositivo</h3>
-            <p className="text-sm text-muted-foreground">Verifique a segurança das suas senhas salvas</p>
+            <h3 className="font-semibold text-foreground">Auditar Senha</h3>
+            <p className="text-sm text-muted-foreground">Adicione uma senha para análise completa</p>
           </div>
         </div>
 
-        <Button
-          onClick={scanPasswords}
-          disabled={scanning}
-          className="w-full"
-          size="lg"
-        >
-          {scanning ? (
-            <>
-              <RefreshCw className="w-5 h-5 animate-spin" />
-              Analisando senhas...
-            </>
-          ) : (
-            <>
-              <Shield className="w-5 h-5" />
-              {scanned ? "Analisar Novamente" : "Iniciar Análise"}
-            </>
-          )}
-        </Button>
+        <div className="space-y-3">
+          <Input
+            placeholder="Nome do serviço (ex: Gmail)"
+            value={newService}
+            onChange={(e) => setNewService(e.target.value)}
+            className="h-12 bg-secondary border-border"
+          />
+          <div className="relative">
+            <Input
+              type={showNew ? "text" : "password"}
+              placeholder="Senha do serviço"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="pr-20 h-12 bg-secondary border-border"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+              <Button variant="ghost" size="icon" onClick={() => setShowNew(!showNew)} className="h-8 w-8">
+                {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={generateAndFill} className="h-8 w-8" title="Gerar senha forte">
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          <Button onClick={addPassword} disabled={adding} className="w-full" size="lg">
+            {adding ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> Verificando vazamento...</>
+            ) : (
+              <><Plus className="w-5 h-5" /> Auditar Senha</>
+            )}
+          </Button>
+        </div>
       </motion.div>
 
-      {/* Scan Results */}
+      {/* Audited list */}
       <AnimatePresence>
-        {scanned && savedPasswords.length > 0 && (
+        {audited.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -209,103 +236,127 @@ export function PasswordAnalyzer() {
             className="glass-card p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground">Senhas Encontradas</h3>
+              <h3 className="font-semibold text-foreground">Senhas Auditadas</h3>
               <span className="text-sm text-muted-foreground">
-                {savedPasswords.filter(p => p.strength >= 80).length}/{savedPasswords.length} seguras
+                {audited.length - weakCount}/{audited.length} seguras
               </span>
             </div>
 
             <div className="space-y-3">
-              {savedPasswords.map((pw, index) => (
+              {audited.map((pw, index) => (
                 <motion.div
                   key={pw.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.05 }}
                   className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                    pw.strength >= 80 
-                      ? "bg-success/5 border-success/20 hover:bg-success/10" 
-                      : pw.strength >= 60 
-                        ? "bg-warning/5 border-warning/20 hover:bg-warning/10"
-                        : "bg-destructive/5 border-destructive/20 hover:bg-destructive/10"
+                    pw.pwned
+                      ? "bg-destructive/10 border-destructive/30 hover:bg-destructive/15"
+                      : pw.strength >= 80
+                        ? "bg-success/5 border-success/20 hover:bg-success/10"
+                        : pw.strength >= 60
+                          ? "bg-warning/5 border-warning/20 hover:bg-warning/10"
+                          : "bg-destructive/5 border-destructive/20 hover:bg-destructive/10"
                   }`}
-                  onClick={() => setSelectedPassword(selectedPassword?.id === pw.id ? null : pw)}
+                  onClick={() => setSelectedId(selectedId === pw.id ? null : pw.id)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        pw.strength >= 80 ? "bg-success/20" : pw.strength >= 60 ? "bg-warning/20" : "bg-destructive/20"
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`p-2 rounded-lg flex-shrink-0 ${
+                        pw.pwned ? "bg-destructive/20" : pw.strength >= 80 ? "bg-success/20" : pw.strength >= 60 ? "bg-warning/20" : "bg-destructive/20"
                       }`}>
-                        {pw.strength >= 80 ? (
+                        {pw.checking ? (
+                          <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                        ) : pw.pwned ? (
+                          <ShieldAlert className="w-4 h-4 text-destructive" />
+                        ) : pw.strength >= 80 ? (
                           <CheckCircle className={`w-4 h-4 ${getStrengthColor(pw.strength)}`} />
                         ) : (
                           <AlertTriangle className={`w-4 h-4 ${getStrengthColor(pw.strength)}`} />
                         )}
                       </div>
-                      <div>
-                        <p className="font-medium text-foreground">{pw.service}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground truncate">{pw.service}</p>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground font-mono">
+                          <span className="text-sm text-muted-foreground font-mono truncate">
                             {showPasswords[pw.id] ? pw.password : "••••••••"}
                           </span>
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); togglePasswordVisibility(pw.id); }}
-                            className="p-1 hover:bg-muted rounded"
+                            className="p-1 hover:bg-muted rounded flex-shrink-0"
                           >
-                            {showPasswords[pw.id] ? (
-                              <EyeOff className="w-3 h-3 text-muted-foreground" />
-                            ) : (
-                              <Eye className="w-3 h-3 text-muted-foreground" />
-                            )}
+                            {showPasswords[pw.id] ? <EyeOff className="w-3 h-3 text-muted-foreground" /> : <Eye className="w-3 h-3 text-muted-foreground" />}
                           </button>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-medium ${getStrengthColor(pw.strength)}`}>
-                        {getStrengthLabel(pw.strength)}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={`text-sm font-medium ${pw.pwned ? "text-destructive" : getStrengthColor(pw.strength)}`}>
+                        {pw.pwned ? "Vazada" : getStrengthLabel(pw.strength)}
                       </span>
-                      <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${
-                        selectedPassword?.id === pw.id ? "rotate-90" : ""
-                      }`} />
+                      <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${selectedId === pw.id ? "rotate-90" : ""}`} />
                     </div>
                   </div>
 
-                  {/* Expanded Details */}
                   <AnimatePresence>
-                    {selectedPassword?.id === pw.id && pw.suggestions.length > 0 && (
+                    {selectedId === pw.id && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="mt-4 pt-4 border-t border-border"
+                        className="mt-4 pt-4 border-t border-border space-y-3"
                       >
-                        <div className="flex items-center gap-2 mb-3">
-                          <Lightbulb className="w-4 h-4 text-warning" />
-                          <span className="text-sm font-medium text-foreground">Sugestões de Correção</span>
+                        {pw.pwned && (
+                          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <ShieldAlert className="w-4 h-4 text-destructive" />
+                              <span className="text-sm font-semibold text-destructive">Encontrada em vazamentos</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Esta senha aparece <strong className="text-destructive">{pw.pwnedCount.toLocaleString("pt-BR")}</strong> vezes
+                              em bases de dados públicas. Troque imediatamente.
+                            </p>
+                          </div>
+                        )}
+
+                        {pw.suggestions.length > 0 && (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <Lightbulb className="w-4 h-4 text-warning" />
+                              <span className="text-sm font-medium text-foreground">Sugestões de Correção</span>
+                            </div>
+                            <ul className="space-y-2">
+                              {pw.suggestions.map((s, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                  <span className="text-primary">•</span>{s}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const p = generateStrongPassword();
+                              navigator.clipboard.writeText(p);
+                              toast.success(`Senha forte para ${pw.service} copiada!`);
+                            }}
+                          >
+                            <RefreshCw className="w-4 h-4" />Nova senha forte
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => { e.stopPropagation(); removePassword(pw.id); }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                        <ul className="space-y-2">
-                          {pw.suggestions.map((suggestion, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <span className="text-primary">•</span>
-                              {suggestion}
-                            </li>
-                          ))}
-                        </ul>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-3 w-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newPw = generateStrongPassword();
-                            navigator.clipboard.writeText(newPw);
-                            toast.success(`Senha forte sugerida para ${pw.service}: copiada!`);
-                          }}
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                          Gerar Nova Senha Forte
-                        </Button>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -316,7 +367,7 @@ export function PasswordAnalyzer() {
         )}
       </AnimatePresence>
 
-      {/* Custom Password Check */}
+      {/* Custom check */}
       <motion.div
         className="glass-card p-6"
         initial={{ opacity: 0, y: 20 }}
@@ -327,46 +378,31 @@ export function PasswordAnalyzer() {
           <div className="p-2 rounded-lg bg-accent/20">
             <Lock className="w-5 h-5 text-accent" />
           </div>
-          <h3 className="font-semibold text-foreground">Verificar Outra Senha</h3>
+          <h3 className="font-semibold text-foreground">Verificação Rápida</h3>
         </div>
 
         <div className="relative mb-4">
           <Input
             type={showCustomPassword ? "text" : "password"}
             value={customPassword}
-            onChange={(e) => setCustomPassword(e.target.value)}
-            placeholder="Digite uma senha para verificar..."
+            onChange={(e) => { setCustomPassword(e.target.value); setCustomPwned(null); }}
+            placeholder="Digite uma senha..."
             className="pr-20 h-12 bg-secondary border-border"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowCustomPassword(!showCustomPassword)}
-              className="h-8 w-8"
-            >
+            <Button variant="ghost" size="icon" onClick={() => setShowCustomPassword(!showCustomPassword)} className="h-8 w-8">
               {showCustomPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </Button>
             {customPassword && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => copyPassword(customPassword)}
-                className="h-8 w-8"
-              >
+              <Button variant="ghost" size="icon" onClick={() => copyPassword(customPassword)} className="h-8 w-8">
                 <Copy className="w-4 h-4" />
               </Button>
             )}
           </div>
         </div>
 
-        {/* Custom Password Analysis */}
         {customAnalysis && customPassword && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4"
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className={`text-sm font-medium ${getStrengthColor(customAnalysis.strength)}`}>
                 {getStrengthLabel(customAnalysis.strength)}
@@ -382,7 +418,20 @@ export function PasswordAnalyzer() {
                 animate={{ width: `${customAnalysis.strength}%` }}
               />
             </div>
-            
+
+            {customPwned && (
+              <div className={`mt-3 p-3 rounded-lg border ${customPwned.pwned ? "bg-destructive/10 border-destructive/20" : "bg-success/10 border-success/20"}`}>
+                <div className="flex items-center gap-2">
+                  {customPwned.pwned ? <ShieldAlert className="w-4 h-4 text-destructive" /> : <CheckCircle className="w-4 h-4 text-success" />}
+                  <span className={`text-sm font-semibold ${customPwned.pwned ? "text-destructive" : "text-success"}`}>
+                    {customPwned.pwned
+                      ? `Vazada ${customPwned.count.toLocaleString("pt-BR")} vezes`
+                      : "Não encontrada em vazamentos"}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {customAnalysis.suggestions.length > 0 && (
               <div className="mt-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
                 <p className="text-sm font-medium text-warning mb-2">Sugestões:</p>
@@ -398,10 +447,14 @@ export function PasswordAnalyzer() {
           </motion.div>
         )}
 
-        <Button variant="outline" onClick={generateAndCopy} className="w-full">
-          <RefreshCw className="w-4 h-4" />
-          Gerar Senha Forte
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={checkCustom} disabled={!customPassword || customChecking} className="flex-1">
+            {customChecking ? <><Loader2 className="w-4 h-4 animate-spin" />Verificando...</> : <><Shield className="w-4 h-4" />Verificar Vazamento</>}
+          </Button>
+          <Button variant="outline" onClick={generateAndCopy}>
+            <RefreshCw className="w-4 h-4" />Gerar
+          </Button>
+        </div>
       </motion.div>
 
       {/* Tips */}
@@ -413,22 +466,10 @@ export function PasswordAnalyzer() {
       >
         <h4 className="font-semibold text-foreground mb-3">Dicas de Segurança</h4>
         <ul className="space-y-2 text-sm text-muted-foreground">
-          <li className="flex items-start gap-2">
-            <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-            Use senhas diferentes para cada conta
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-            Evite informações pessoais na senha
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-            Considere usar um gerenciador de senhas
-          </li>
-          <li className="flex items-start gap-2">
-            <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-            Ative autenticação de dois fatores
-          </li>
+          <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />Use senhas diferentes para cada conta</li>
+          <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />Prefira frases-passe longas (14+ caracteres)</li>
+          <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />Use um gerenciador de senhas confiável</li>
+          <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />Ative autenticação de dois fatores (2FA)</li>
         </ul>
       </motion.div>
     </div>
