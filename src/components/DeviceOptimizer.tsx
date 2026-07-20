@@ -15,6 +15,7 @@ import {
 import { PerformanceCards } from "@/components/PerformanceCards";
 import { StorageGranular } from "@/components/StorageGranular";
 import { HealthPressureCards } from "@/components/HealthPressureCards";
+import { PowerCards } from "@/components/PowerCards";
 
 interface MetricRow {
   id: string;
@@ -231,6 +232,11 @@ export function DeviceOptimizer() {
 
       {/* Health & pressure: Service Worker + memory */}
       <HealthPressureCards />
+
+      {/* Power: Wake Lock + smart power saver */}
+      <PowerCards />
+
+
 
 
 
