@@ -10,6 +10,7 @@ import {
   type IntrusionCheck,
   type Severity,
 } from "@/lib/intrusionSignals";
+import { runPackageBScan } from "@/lib/adwareSignals";
 import { toast } from "sonner";
 
 const severityStyles: Record<Severity, { color: string; bg: string; icon: typeof ShieldCheck; label: string }> = {
@@ -26,8 +27,8 @@ export function IntrusionDetection() {
   const runScan = async () => {
     setScanning(true);
     try {
-      const results = await runIntrusionScan();
-      setChecks(results);
+      const [pkgA, pkgB] = await Promise.all([runIntrusionScan(), runPackageBScan()]);
+      setChecks([...pkgA, ...pkgB]);
     } finally {
       setScanning(false);
     }
