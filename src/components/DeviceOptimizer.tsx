@@ -12,6 +12,7 @@ import {
   getNetworkInfo, getBatteryInfo, formatDuration,
   type StorageInfo, type CacheInfo, type MemoryInfo, type NetworkInfo, type BatteryInfo,
 } from "@/lib/deviceStorage";
+import { PerformanceCards } from "@/components/PerformanceCards";
 
 interface MetricRow {
   id: string;
@@ -219,6 +220,9 @@ export function DeviceOptimizer() {
 
       {/* Live: Network + Battery */}
       <LiveNetworkBattery network={network} battery={battery} />
+
+      {/* Live: Web Vitals + heaviest resources */}
+      <PerformanceCards />
 
       {/* Metrics */}
       <div className="space-y-4">
