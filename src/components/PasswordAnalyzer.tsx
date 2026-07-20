@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { checkPasswordPwned } from "@/lib/hibp";
+import { PasswordRiskSummary } from "@/components/PasswordRiskSummary";
 
 interface PasswordCheck {
   label: string;
@@ -235,6 +236,9 @@ export function PasswordAnalyzer() {
           </Button>
         </div>
       </motion.div>
+
+      {/* Risk summary (reuse + weakness) */}
+      <PasswordRiskSummary entries={audited} />
 
       {/* Audited list */}
       <AnimatePresence>
