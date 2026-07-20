@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Upload, FileWarning, Loader2, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { checkPasswordPwned } from "@/lib/hibp";
 
