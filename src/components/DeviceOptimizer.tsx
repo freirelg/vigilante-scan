@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Cpu, HardDrive, Trash2, Zap, RefreshCw, CheckCircle, Database, Info } from "lucide-react";
+import {
+  Cpu, HardDrive, Trash2, Zap, RefreshCw, CheckCircle, Database, Info,
+  Wifi, WifiOff, Signal, BatteryCharging, BatteryLow, BatteryMedium, BatteryFull, Gauge,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   getStorageInfo, getCacheInfo, getMemoryInfo, clearAllCaches, formatBytes,
-  type StorageInfo, type CacheInfo, type MemoryInfo,
+  getNetworkInfo, getBatteryInfo, formatDuration,
+  type StorageInfo, type CacheInfo, type MemoryInfo, type NetworkInfo, type BatteryInfo,
 } from "@/lib/deviceStorage";
 
 interface MetricRow {
