@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { SecurityScanner } from "@/components/SecurityScanner";
@@ -12,10 +12,15 @@ import { BottomNav } from "@/components/BottomNav";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
 import { HeaderStatus } from "@/components/HeaderStatus";
+import { startBehaviorMonitor } from "@/lib/behavioralSignals";
 import logoAsset from "@/assets/freirenet-logo.png.asset.json";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("score");
+
+  useEffect(() => {
+    startBehaviorMonitor();
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {

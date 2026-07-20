@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldAlert, ShieldCheck, AlertTriangle, RefreshCw, Clipboard, Activity } from "lucide-react";
+import { ShieldAlert, ShieldCheck, AlertTriangle, RefreshCw, Clipboard, Activity, Fingerprint, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,12 @@ import {
   type Severity,
 } from "@/lib/intrusionSignals";
 import { runPackageBScan } from "@/lib/adwareSignals";
+import {
+  runPackageCScan,
+  clearBaseline,
+  resetBehaviorStats,
+  startBehaviorMonitor,
+} from "@/lib/behavioralSignals";
 import { toast } from "sonner";
 
 const severityStyles: Record<Severity, { color: string; bg: string; icon: typeof ShieldCheck; label: string }> = {
@@ -27,16 +33,33 @@ export function IntrusionDetection() {
   const runScan = async () => {
     setScanning(true);
     try {
-      const [pkgA, pkgB] = await Promise.all([runIntrusionScan(), runPackageBScan()]);
-      setChecks([...pkgA, ...pkgB]);
+      const [pkgA, pkgB, pkgC] = await Promise.all([
+        runIntrusionScan(),
+        runPackageBScan(),
+        runPackageCScan(),
+      ]);
+      setChecks([...pkgA, ...pkgB, ...pkgC]);
     } finally {
       setScanning(false);
     }
   };
 
   useEffect(() => {
+    startBehaviorMonitor();
     runScan();
   }, []);
+
+  const resetFingerprint = () => {
+    clearBaseline();
+    toast.success("Baseline de fingerprint apagado. Rode o scan para capturar novo.");
+    runScan();
+  };
+
+  const resetBehavior = () => {
+    resetBehaviorStats();
+    toast.success("Estatísticas comportamentais reiniciadas.");
+    runScan();
+  };
 
   const testClipboard = async () => {
     setTestingClipboard(true);
