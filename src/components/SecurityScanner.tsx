@@ -233,6 +233,8 @@ export function SecurityScanner() {
 
   return (
     <div className="space-y-6">
+      <ScanQueueHistory />
+
       {/* VirusTotal URL Scanner (REAL) */}
       <div className="glass-card p-4 space-y-3 border-primary/20">
         <div className="flex items-center gap-2">
