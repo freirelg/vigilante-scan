@@ -195,3 +195,127 @@ export function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
+
+// ============ IndexedDB granular ============
+export interface IdbDbInfo {
+  name: string;
+  version: number | null;
+  estimatedBytes: number | null;
+}
+
+export async function listIndexedDbs(): Promise<{ supported: boolean; dbs: IdbDbInfo[] }> {
+  const idb = indexedDB as IDBFactory & { databases?: () => Promise<{ name?: string; version?: number }[]> };
+  if (!idb.databases) return { supported: false, dbs: [] };
+  try {
+    const raw = await idb.databases();
+    const dbs: IdbDbInfo[] = raw
+      .filter((d) => !!d.name)
+      .map((d) => ({ name: d.name!, version: d.version ?? null, estimatedBytes: null }));
+    return { supported: true, dbs };
+  } catch {
+    return { supported: true, dbs: [] };
+  }
+}
+
+export function deleteIndexedDb(name: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.deleteDatabase(name);
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => resolve(false);
+      req.onblocked = () => resolve(false);
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+// ============ 1st-party cookies ============
+export interface CookieItem {
+  name: string;
+  value: string;
+  size: number;
+  essential: boolean;
+}
+
+const ESSENTIAL_PREFIXES = [
+  "sb-", "supabase", "__Host-", "__Secure-", "csrf", "xsrf", "session", "auth",
+];
+
+function isEssential(name: string): boolean {
+  const lower = name.toLowerCase();
+  return ESSENTIAL_PREFIXES.some((p) => lower.startsWith(p.toLowerCase()));
+}
+
+export interface CookieInfo {
+  supported: boolean;
+  items: CookieItem[];
+  totalSize: number;
+  count: number;
+  essentialCount: number;
+  nonEssentialCount: number;
+  nonEssentialSize: number;
+}
+
+export function getCookieInfo(): CookieInfo {
+  if (typeof document === "undefined" || !("cookie" in document)) {
+    return { supported: false, items: [], totalSize: 0, count: 0, essentialCount: 0, nonEssentialCount: 0, nonEssentialSize: 0 };
+  }
+  const raw = document.cookie || "";
+  if (!raw.trim()) {
+    return { supported: true, items: [], totalSize: 0, count: 0, essentialCount: 0, nonEssentialCount: 0, nonEssentialSize: 0 };
+  }
+  const items: CookieItem[] = raw.split(";").map((c) => {
+    const idx = c.indexOf("=");
+    const name = (idx >= 0 ? c.slice(0, idx) : c).trim();
+    const value = idx >= 0 ? c.slice(idx + 1) : "";
+    return { name, value, size: name.length + value.length + 1, essential: isEssential(name) };
+  }).filter((c) => c.name.length > 0);
+
+  const totalSize = items.reduce((s, i) => s + i.size, 0);
+  const essentialCount = items.filter((i) => i.essential).length;
+  const nonEssential = items.filter((i) => !i.essential);
+  return {
+    supported: true,
+    items,
+    totalSize,
+    count: items.length,
+    essentialCount,
+    nonEssentialCount: nonEssential.length,
+    nonEssentialSize: nonEssential.reduce((s, i) => s + i.size, 0),
+  };
+}
+
+export function deleteCookie(name: string): void {
+  if (typeof document === "undefined") return;
+  const host = window.location.hostname;
+  const parts = host.split(".");
+  const domains: (string | null)[] = [null, host];
+  for (let i = 1; i < parts.length - 1; i++) {
+    domains.push("." + parts.slice(i).join("."));
+  }
+  if (parts.length >= 2) domains.push("." + parts.slice(-2).join("."));
+  const paths = ["/", window.location.pathname, "/" + window.location.pathname.split("/")[1]];
+  const expires = "Thu, 01 Jan 1970 00:00:00 GMT";
+  for (const d of domains) {
+    for (const p of paths) {
+      const domainAttr = d ? `; domain=${d}` : "";
+      document.cookie = `${name}=; expires=${expires}; path=${p}${domainAttr}`;
+      document.cookie = `${name}=; expires=${expires}; path=${p}${domainAttr}; SameSite=Lax`;
+      document.cookie = `${name}=; expires=${expires}; path=${p}${domainAttr}; SameSite=None; Secure`;
+    }
+  }
+}
+
+export function clearNonEssentialCookies(): { removed: number; freed: number } {
+  const info = getCookieInfo();
+  let removed = 0;
+  let freed = 0;
+  for (const item of info.items) {
+    if (item.essential) continue;
+    deleteCookie(item.name);
+    removed += 1;
+    freed += item.size;
+  }
+  return { removed, freed };
+}

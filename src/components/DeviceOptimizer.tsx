@@ -13,6 +13,7 @@ import {
   type StorageInfo, type CacheInfo, type MemoryInfo, type NetworkInfo, type BatteryInfo,
 } from "@/lib/deviceStorage";
 import { PerformanceCards } from "@/components/PerformanceCards";
+import { StorageGranular } from "@/components/StorageGranular";
 
 interface MetricRow {
   id: string;
@@ -223,6 +224,11 @@ export function DeviceOptimizer() {
 
       {/* Live: Web Vitals + heaviest resources */}
       <PerformanceCards />
+
+      {/* Granular cleanup: IndexedDB + 1st-party cookies */}
+      <StorageGranular />
+
+
 
       {/* Metrics */}
       <div className="space-y-4">
