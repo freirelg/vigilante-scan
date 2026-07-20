@@ -188,20 +188,26 @@ export function IntrusionDetection() {
           <Activity className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <div className="text-xs text-muted-foreground leading-relaxed space-y-2">
             <p>
-              <strong className="text-foreground">Pacote A — Intrusão.</strong> Injeção de scripts/iframes, sequestro
-              de clipboard (clipper) e divergência de IP público (proxy/MITM).
+              <strong className="text-foreground">Análise A — Invasores no navegador.</strong> Verifica se algum
+              programa ou extensão está injetando conteúdo estranho na página, se algo está trocando o que você
+              copia (golpe comum com chaves Pix e carteiras) e se o seu endereço de internet está passando por um
+              intermediário suspeito.
             </p>
             <p>
-              <strong className="text-foreground">Pacote B — Adware/Miner.</strong> Service Workers estranhos,
-              permissões de push abusivas e análise de CPU/heap contra mineradores e RATs.
+              <strong className="text-foreground">Análise B — Propagandas e mineradores escondidos.</strong>{" "}
+              Procura programas que ficam rodando em segundo plano sem você perceber, sites autorizados a te enviar
+              notificações indesejadas e sinais de que seu celular/computador está sendo usado para minerar moedas
+              ou ser controlado à distância (deixa o aparelho lento e quente).
             </p>
             <p>
-              <strong className="text-foreground">Pacote C — Fingerprint & Comportamento.</strong> Compara WebGL,
-              canvas, áudio e hardware com um baseline local; monitora eventos <code>isTrusted</code>, jitter de
-              digitação e perda de foco para detectar automação/overlay de phishing.
+              <strong className="text-foreground">Análise C — Identidade do aparelho e comportamento.</strong>{" "}
+              Guarda uma “impressão digital” do seu aparelho (placa de vídeo, tela, som, memória) e avisa se ela
+              mudar de repente — pode ser sinal de que alguém está usando sua conta em outro lugar. Também observa
+              se cliques e digitações parecem vir de um robô ou de uma tela falsa sobreposta (phishing).
             </p>
             <p className="opacity-70">
-              Um PWA não enxerga processos do sistema — para varredura de arquivos use um antivírus nativo.
+              Este app roda dentro do navegador e não consegue ver arquivos ou programas instalados no aparelho.
+              Para uma varredura completa do sistema, use também um antivírus tradicional.
             </p>
           </div>
         </div>
