@@ -217,6 +217,9 @@ export function DeviceOptimizer() {
         </p>
       </motion.div>
 
+      {/* Live: Network + Battery */}
+      <LiveNetworkBattery network={network} battery={battery} />
+
       {/* Metrics */}
       <div className="space-y-4">
         {metrics.map((m, i) => (
