@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { SecurityScanner } from "@/components/SecurityScanner";
+import { IntrusionDetection } from "@/components/IntrusionDetection";
 import { DeviceOptimizer } from "@/components/DeviceOptimizer";
 import { PasswordAnalyzer } from "@/components/PasswordAnalyzer";
 import { NetworkSecurity } from "@/components/NetworkSecurity";
@@ -22,6 +23,8 @@ const Index = () => {
         return <VulnerabilityScore />;
       case "scan":
         return <SecurityScanner />;
+      case "intrusion":
+        return <IntrusionDetection />;
       case "optimize":
         return <DeviceOptimizer />;
       case "password":
@@ -43,6 +46,8 @@ const Index = () => {
         return "Score de Vulnerabilidade";
       case "scan":
         return "Scanner de Segurança";
+      case "intrusion":
+        return "Detecção de Intrusão";
       case "optimize":
         return "Otimização";
       case "password":
