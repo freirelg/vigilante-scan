@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, ShieldCheck } from "lucide-react";
 import { SecurityScanner } from "@/components/SecurityScanner";
 import { DeviceOptimizer } from "@/components/DeviceOptimizer";
 import { PasswordAnalyzer } from "@/components/PasswordAnalyzer";
@@ -9,6 +8,8 @@ import { VulnerabilityScore } from "@/components/VulnerabilityScore";
 import { ScanHistory } from "@/components/ScanHistory";
 import { BottomNav } from "@/components/BottomNav";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { SplashScreen } from "@/components/SplashScreen";
+import logo from "@/assets/logo.png";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("score");
