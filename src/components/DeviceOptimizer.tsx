@@ -30,21 +30,56 @@ export function DeviceOptimizer() {
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [cache, setCache] = useState<CacheInfo | null>(null);
   const [memory, setMemory] = useState<MemoryInfo | null>(null);
+  const [network, setNetwork] = useState<NetworkInfo | null>(null);
+  const [battery, setBattery] = useState<BatteryInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [optimizing, setOptimizing] = useState(false);
   const [freedBytes, setFreedBytes] = useState(0);
 
   const refresh = async () => {
     setLoading(true);
-    const [s, c] = await Promise.all([getStorageInfo(), getCacheInfo()]);
+    const [s, c, n, b] = await Promise.all([
+      getStorageInfo(), getCacheInfo(), getNetworkInfo(), getBatteryInfo(),
+    ]);
     setStorage(s);
     setCache(c);
     setMemory(getMemoryInfo());
+    setNetwork(n);
+    setBattery(b);
     setLoading(false);
   };
 
   useEffect(() => {
     refresh();
+  }, []);
+
+  // Live subscriptions: network + battery + online/offline
+  useEffect(() => {
+    const nav = navigator as Navigator & {
+      connection?: { addEventListener?: (t: string, cb: () => void) => void; removeEventListener?: (t: string, cb: () => void) => void };
+      getBattery?: () => Promise<EventTarget & { level: number; charging: boolean; chargingTime: number; dischargingTime: number }>;
+    };
+
+    const refreshNet = async () => setNetwork(await getNetworkInfo());
+    const refreshBat = async () => setBattery(await getBatteryInfo());
+
+    nav.connection?.addEventListener?.("change", refreshNet);
+    window.addEventListener("online", refreshNet);
+    window.addEventListener("offline", refreshNet);
+
+    let bat: (EventTarget & { level: number; charging: boolean; chargingTime: number; dischargingTime: number }) | null = null;
+    const evs = ["levelchange", "chargingchange", "chargingtimechange", "dischargingtimechange"];
+    nav.getBattery?.().then((b) => {
+      bat = b;
+      evs.forEach((e) => b.addEventListener(e, refreshBat));
+    }).catch(() => {});
+
+    return () => {
+      nav.connection?.removeEventListener?.("change", refreshNet);
+      window.removeEventListener("online", refreshNet);
+      window.removeEventListener("offline", refreshNet);
+      if (bat) evs.forEach((e) => bat!.removeEventListener(e, refreshBat));
+    };
   }, []);
 
   const optimize = async () => {
