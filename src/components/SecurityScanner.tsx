@@ -251,6 +251,88 @@ export function SecurityScanner() {
 
   return (
     <div className="space-y-6">
+      {/* VirusTotal URL Scanner (REAL) */}
+      <div className="glass-card p-4 space-y-3 border-primary/20">
+        <div className="flex items-center gap-2">
+          <Globe className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-foreground">Verificar URL/Link (VirusTotal)</h3>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 ml-auto">
+            REAL
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Análise em tempo real contra 70+ engines de antivírus (Kaspersky, ESET, BitDefender, etc.)
+        </p>
+        <div className="flex gap-2">
+          <Input
+            placeholder="https://exemplo.com ou domínio suspeito"
+            value={vtUrl}
+            onChange={(e) => setVtUrl(e.target.value)}
+            disabled={vtLoading}
+            onKeyDown={(e) => e.key === "Enter" && scanUrlWithVirusTotal()}
+          />
+          <Button onClick={scanUrlWithVirusTotal} disabled={vtLoading}>
+            {vtLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+          </Button>
+        </div>
+
+        {vtResult && vtResult.status === "completed" && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`p-3 rounded-lg border ${
+              vtResult.verdict === "clean"
+                ? "bg-success/5 border-success/30"
+                : vtResult.verdict === "suspicious"
+                ? "bg-warning/5 border-warning/30"
+                : "bg-destructive/5 border-destructive/30"
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              {vtResult.verdict === "clean" ? (
+                <CheckCircle className="w-4 h-4 text-success" />
+              ) : (
+                <AlertCircle className={`w-4 h-4 ${vtResult.verdict === "suspicious" ? "text-warning" : "text-destructive"}`} />
+              )}
+              <span className="font-medium text-foreground text-sm truncate">{vtResult.host}</span>
+            </div>
+            <div className="grid grid-cols-4 gap-2 text-center text-xs">
+              <div>
+                <div className="text-destructive font-bold">{vtResult.stats.malicious}</div>
+                <div className="text-muted-foreground">malicioso</div>
+              </div>
+              <div>
+                <div className="text-warning font-bold">{vtResult.stats.suspicious}</div>
+                <div className="text-muted-foreground">suspeito</div>
+              </div>
+              <div>
+                <div className="text-success font-bold">{vtResult.stats.harmless}</div>
+                <div className="text-muted-foreground">seguro</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground font-bold">{vtResult.stats.undetected}</div>
+                <div className="text-muted-foreground">n/d</div>
+              </div>
+            </div>
+            {vtResult.detections?.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <p className="text-xs text-muted-foreground mb-1.5">Detecções:</p>
+                <div className="flex flex-wrap gap-1">
+                  {vtResult.detections.slice(0, 8).map((d: any) => (
+                    <span
+                      key={d.engine}
+                      className="text-[10px] px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20"
+                    >
+                      {d.engine}: {d.result}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </div>
+
       {/* Scanner Visual */}
       <div className="relative flex items-center justify-center py-8">
         <motion.div
