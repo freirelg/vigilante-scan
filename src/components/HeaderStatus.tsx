@@ -13,7 +13,9 @@ export const HeaderStatus = () => {
   const [supported, setSupported] = useState(true);
 
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000 * 30);
+    const tick = () => setNow(new Date());
+    tick();
+    const t = setInterval(tick, 1000);
     return () => clearInterval(t);
   }, []);
 
