@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, ShieldCheck, ShieldAlert, Bug, Fingerprint, FileWarning, Loader2, Trash2, Archive, CheckCircle, Link2, Globe, AlertCircle } from "lucide-react";
+import { Shield, ShieldCheck, ShieldAlert, Bug, Fingerprint, FileWarning, Loader2, Trash2, Archive, CheckCircle, Link2, Globe, AlertCircle, Upload, FileSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -66,6 +66,46 @@ export function SecurityScanner() {
       toast.error("Erro ao consultar VirusTotal: " + (e.message || "desconhecido"));
     } finally {
       setVtLoading(false);
+    }
+  };
+
+  // VirusTotal FILE scan (real)
+  const [vtFile, setVtFile] = useState<File | null>(null);
+  const [vtFileLoading, setVtFileLoading] = useState(false);
+  const [vtFileResult, setVtFileResult] = useState<any>(null);
+
+  const scanFileWithVirusTotal = async () => {
+    if (!vtFile) {
+      toast.error("Selecione um arquivo para analisar");
+      return;
+    }
+    if (vtFile.size > 32 * 1024 * 1024) {
+      toast.error("Arquivo excede 32MB (limite da API pública do VirusTotal)");
+      return;
+    }
+    setVtFileLoading(true);
+    setVtFileResult(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", vtFile);
+      const { data, error } = await supabase.functions.invoke("virustotal-scan", { body: fd });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      setVtFileResult(data);
+      localStorage.setItem("last-vt-file-scan", JSON.stringify(data));
+      if (data.status === "queued") {
+        toast.info("Arquivo em análise. Reenvie em ~1 minuto para ver o resultado.");
+      } else if (data.verdict === "clean") {
+        toast.success(`Arquivo limpo em ${data.stats.total} engines`);
+      } else if (data.verdict === "suspicious") {
+        toast.warning(`${data.stats.suspicious} engine(s) marcaram como suspeito`);
+      } else {
+        toast.error(`⚠️ ${data.stats.malicious} engine(s) detectaram malware!`);
+      }
+    } catch (e: any) {
+      toast.error("Erro ao consultar VirusTotal: " + (e.message || "desconhecido"));
+    } finally {
+      setVtFileLoading(false);
     }
   };
 
