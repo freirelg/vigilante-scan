@@ -220,6 +220,9 @@ export function DeviceOptimizer() {
       {/* Live: Network + Battery */}
       <LiveNetworkBattery network={network} battery={battery} />
 
+      {/* Live: Web Vitals + heaviest resources */}
+      <PerformanceCards />
+
       {/* Metrics */}
       <div className="space-y-4">
         {metrics.map((m, i) => (
