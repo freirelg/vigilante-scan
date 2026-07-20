@@ -68,32 +68,55 @@ const Index = () => {
         </div>
 
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-background/70 backdrop-blur-xl border-b border-border/60">
-          <div className="flex items-center justify-between px-4 h-16 max-w-md mx-auto">
+        <header className="sticky top-0 z-40 border-b border-primary/10 overflow-hidden">
+          {/* Circuit pattern background */}
+          <div className="absolute inset-0 bg-[#0a1628]">
+            <div
+              className="absolute inset-0 opacity-[0.15]"
+              style={{
+                backgroundImage: `
+                  linear-gradient(hsl(var(--primary) / 0.4) 1px, transparent 1px),
+                  linear-gradient(90deg, hsl(var(--primary) / 0.4) 1px, transparent 1px),
+                  radial-gradient(circle at 20% 30%, hsl(var(--primary) / 0.5) 1.5px, transparent 2px),
+                  radial-gradient(circle at 70% 60%, hsl(var(--accent) / 0.5) 1.5px, transparent 2px),
+                  radial-gradient(circle at 85% 20%, hsl(var(--primary) / 0.5) 1.5px, transparent 2px)
+                `,
+                backgroundSize: "28px 28px, 28px 28px, 120px 120px, 140px 140px, 100px 100px",
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/80 via-transparent to-[#0a1628]/80" />
+          </div>
+
+          <div className="relative flex items-center justify-between px-4 h-20 max-w-md mx-auto">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="absolute inset-0 bg-primary/30 blur-lg rounded-full" />
+                <div className="absolute inset-0 bg-primary/40 blur-xl rounded-full" />
                 <img
                   src={logo}
-                  alt="Freirenet-SecureGuard"
-                  width={40}
-                  height={40}
-                  className="relative w-10 h-10 drop-shadow-[0_0_8px_hsl(var(--primary)/0.4)]"
+                  alt="FreireNet SecureGuard"
+                  width={48}
+                  height={48}
+                  className="relative w-12 h-12 drop-shadow-[0_0_10px_hsl(var(--primary)/0.6)]"
                 />
               </div>
               <div className="leading-tight">
-                <h1 className="font-display font-bold text-foreground tracking-tight">
-                  Freirenet
+                <h1 className="font-display font-bold text-xl text-white tracking-tight">
+                  FreireNet
                 </h1>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-primary/80 font-medium">
-                  SecureGuard
+                <p className="text-xs text-white/60 font-medium tracking-wide">
+                  Scan Security
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20">
-              <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              <span className="text-xs text-success font-medium">Protegido</span>
-            </div>
+
+            <button
+              type="button"
+              aria-label="Notificações"
+              className="relative flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+            >
+              <Bell className="w-5 h-5 text-white" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-success ring-2 ring-[#0a1628] animate-pulse" />
+            </button>
           </div>
         </header>
 
