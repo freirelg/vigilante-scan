@@ -10,7 +10,8 @@ import { ScanHistory } from "@/components/ScanHistory";
 import { BottomNav } from "@/components/BottomNav";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
-import logo from "@/assets/logo.png";
+import { HeaderStatus } from "@/components/HeaderStatus";
+import logoAsset from "@/assets/freirenet-logo.png.asset.json";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("score");
