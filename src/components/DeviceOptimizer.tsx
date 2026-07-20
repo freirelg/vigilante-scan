@@ -14,6 +14,7 @@ import {
 } from "@/lib/deviceStorage";
 import { PerformanceCards } from "@/components/PerformanceCards";
 import { StorageGranular } from "@/components/StorageGranular";
+import { HealthPressureCards } from "@/components/HealthPressureCards";
 
 interface MetricRow {
   id: string;
@@ -227,6 +228,11 @@ export function DeviceOptimizer() {
 
       {/* Granular cleanup: IndexedDB + 1st-party cookies */}
       <StorageGranular />
+
+      {/* Health & pressure: Service Worker + memory */}
+      <HealthPressureCards />
+
+
 
 
 
