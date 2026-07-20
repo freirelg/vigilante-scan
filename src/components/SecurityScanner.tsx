@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, ShieldCheck, ShieldAlert, Bug, Fingerprint, FileWarning, Loader2, Trash2, Archive, CheckCircle, Link2, Globe, AlertCircle } from "lucide-react";
+import { Shield, ShieldCheck, ShieldAlert, Bug, Fingerprint, FileWarning, Loader2, Trash2, Archive, CheckCircle, Link2, Globe, AlertCircle, Upload, FileSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -66,6 +66,46 @@ export function SecurityScanner() {
       toast.error("Erro ao consultar VirusTotal: " + (e.message || "desconhecido"));
     } finally {
       setVtLoading(false);
+    }
+  };
+
+  // VirusTotal FILE scan (real)
+  const [vtFile, setVtFile] = useState<File | null>(null);
+  const [vtFileLoading, setVtFileLoading] = useState(false);
+  const [vtFileResult, setVtFileResult] = useState<any>(null);
+
+  const scanFileWithVirusTotal = async () => {
+    if (!vtFile) {
+      toast.error("Selecione um arquivo para analisar");
+      return;
+    }
+    if (vtFile.size > 32 * 1024 * 1024) {
+      toast.error("Arquivo excede 32MB (limite da API pública do VirusTotal)");
+      return;
+    }
+    setVtFileLoading(true);
+    setVtFileResult(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", vtFile);
+      const { data, error } = await supabase.functions.invoke("virustotal-scan", { body: fd });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      setVtFileResult(data);
+      localStorage.setItem("last-vt-file-scan", JSON.stringify(data));
+      if (data.status === "queued") {
+        toast.info("Arquivo em análise. Reenvie em ~1 minuto para ver o resultado.");
+      } else if (data.verdict === "clean") {
+        toast.success(`Arquivo limpo em ${data.stats.total} engines`);
+      } else if (data.verdict === "suspicious") {
+        toast.warning(`${data.stats.suspicious} engine(s) marcaram como suspeito`);
+      } else {
+        toast.error(`⚠️ ${data.stats.malicious} engine(s) detectaram malware!`);
+      }
+    } catch (e: any) {
+      toast.error("Erro ao consultar VirusTotal: " + (e.message || "desconhecido"));
+    } finally {
+      setVtFileLoading(false);
     }
   };
 
@@ -330,6 +370,100 @@ export function SecurityScanner() {
               </div>
             )}
           </motion.div>
+        )}
+      </div>
+
+      {/* VirusTotal FILE Scanner (REAL) */}
+      <div className="glass-card p-4 space-y-3 border-primary/20">
+        <div className="flex items-center gap-2">
+          <FileSearch className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-foreground">Verificar Arquivo (VirusTotal)</h3>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 ml-auto">
+            REAL
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Envie APKs, executáveis, PDFs, documentos etc. (até 32MB). O arquivo é enviado ao VirusTotal e analisado por 70+ antivírus.
+        </p>
+        <div className="flex gap-2 items-center">
+          <label className="flex-1 flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-background/50 cursor-pointer hover:bg-background/80 transition-colors text-sm">
+            <Upload className="w-4 h-4 text-muted-foreground" />
+            <span className="truncate text-muted-foreground">
+              {vtFile ? `${vtFile.name} (${(vtFile.size / 1024).toFixed(1)} KB)` : "Selecionar arquivo..."}
+            </span>
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => setVtFile(e.target.files?.[0] || null)}
+              disabled={vtFileLoading}
+            />
+          </label>
+          <Button onClick={scanFileWithVirusTotal} disabled={vtFileLoading || !vtFile}>
+            {vtFileLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSearch className="w-4 h-4" />}
+          </Button>
+        </div>
+
+        {vtFileResult && vtFileResult.status === "completed" && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`p-3 rounded-lg border ${
+              vtFileResult.verdict === "clean"
+                ? "bg-success/5 border-success/30"
+                : vtFileResult.verdict === "suspicious"
+                ? "bg-warning/5 border-warning/30"
+                : "bg-destructive/5 border-destructive/30"
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              {vtFileResult.verdict === "clean" ? (
+                <CheckCircle className="w-4 h-4 text-success" />
+              ) : (
+                <AlertCircle className={`w-4 h-4 ${vtFileResult.verdict === "suspicious" ? "text-warning" : "text-destructive"}`} />
+              )}
+              <span className="font-medium text-foreground text-sm truncate">{vtFileResult.filename}</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground font-mono truncate mb-2">SHA-256: {vtFileResult.sha256}</p>
+            <div className="grid grid-cols-4 gap-2 text-center text-xs">
+              <div>
+                <div className="text-destructive font-bold">{vtFileResult.stats.malicious}</div>
+                <div className="text-muted-foreground">malicioso</div>
+              </div>
+              <div>
+                <div className="text-warning font-bold">{vtFileResult.stats.suspicious}</div>
+                <div className="text-muted-foreground">suspeito</div>
+              </div>
+              <div>
+                <div className="text-success font-bold">{vtFileResult.stats.harmless}</div>
+                <div className="text-muted-foreground">seguro</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground font-bold">{vtFileResult.stats.undetected}</div>
+                <div className="text-muted-foreground">n/d</div>
+              </div>
+            </div>
+            {vtFileResult.detections?.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <p className="text-xs text-muted-foreground mb-1.5">Detecções:</p>
+                <div className="flex flex-wrap gap-1">
+                  {vtFileResult.detections.slice(0, 8).map((d: any) => (
+                    <span
+                      key={d.engine}
+                      className="text-[10px] px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20"
+                    >
+                      {d.engine}: {d.result}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {vtFileResult && vtFileResult.status === "queued" && (
+          <div className="p-3 rounded-lg border border-warning/30 bg-warning/5 text-xs text-warning">
+            Arquivo enviado e em fila no VirusTotal. Reenvie o mesmo arquivo em ~1 minuto para ver o resultado (o cache por hash SHA-256 responderá instantaneamente).
+          </div>
         )}
       </div>
 
