@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldAlert, ShieldCheck, AlertTriangle, RefreshCw, Clipboard, Activity } from "lucide-react";
+import { ShieldAlert, ShieldCheck, AlertTriangle, RefreshCw, Clipboard, Activity, Fingerprint, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,12 @@ import {
   type Severity,
 } from "@/lib/intrusionSignals";
 import { runPackageBScan } from "@/lib/adwareSignals";
+import {
+  runPackageCScan,
+  clearBaseline,
+  resetBehaviorStats,
+  startBehaviorMonitor,
+} from "@/lib/behavioralSignals";
 import { toast } from "sonner";
 
 const severityStyles: Record<Severity, { color: string; bg: string; icon: typeof ShieldCheck; label: string }> = {
@@ -27,16 +33,33 @@ export function IntrusionDetection() {
   const runScan = async () => {
     setScanning(true);
     try {
-      const [pkgA, pkgB] = await Promise.all([runIntrusionScan(), runPackageBScan()]);
-      setChecks([...pkgA, ...pkgB]);
+      const [pkgA, pkgB, pkgC] = await Promise.all([
+        runIntrusionScan(),
+        runPackageBScan(),
+        runPackageCScan(),
+      ]);
+      setChecks([...pkgA, ...pkgB, ...pkgC]);
     } finally {
       setScanning(false);
     }
   };
 
   useEffect(() => {
+    startBehaviorMonitor();
     runScan();
   }, []);
+
+  const resetFingerprint = () => {
+    clearBaseline();
+    toast.success("Baseline de fingerprint apagado. Rode o scan para capturar novo.");
+    runScan();
+  };
+
+  const resetBehavior = () => {
+    resetBehaviorStats();
+    toast.success("Estatísticas comportamentais reiniciadas.");
+    runScan();
+  };
 
   const testClipboard = async () => {
     setTestingClipboard(true);
@@ -129,6 +152,30 @@ export function IntrusionDetection() {
                       {testingClipboard ? "Testando..." : "Testar Clipboard"}
                     </Button>
                   )}
+
+                  {check.id === "fingerprint" && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="mt-3"
+                      onClick={resetFingerprint}
+                    >
+                      <Fingerprint className="w-4 h-4 mr-2" />
+                      Recapturar baseline
+                    </Button>
+                  )}
+
+                  {check.id === "behavior" && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="mt-3"
+                      onClick={resetBehavior}
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Reiniciar estatísticas
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>
@@ -139,11 +186,23 @@ export function IntrusionDetection() {
       <Card className="p-4 bg-muted/30 border-dashed">
         <div className="flex gap-3">
           <Activity className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <div className="text-xs text-muted-foreground leading-relaxed">
-            <strong className="text-foreground">Pacote A — Detecção de Intrusão.</strong> Checagens 100% reais no
-            navegador: injeção de scripts/iframes por extensões, sequestro do clipboard (clipper) e divergência de IP
-            público (proxy/MITM). Um PWA não vê processos do sistema — para varredura de arquivos use um antivírus
-            nativo.
+          <div className="text-xs text-muted-foreground leading-relaxed space-y-2">
+            <p>
+              <strong className="text-foreground">Pacote A — Intrusão.</strong> Injeção de scripts/iframes, sequestro
+              de clipboard (clipper) e divergência de IP público (proxy/MITM).
+            </p>
+            <p>
+              <strong className="text-foreground">Pacote B — Adware/Miner.</strong> Service Workers estranhos,
+              permissões de push abusivas e análise de CPU/heap contra mineradores e RATs.
+            </p>
+            <p>
+              <strong className="text-foreground">Pacote C — Fingerprint & Comportamento.</strong> Compara WebGL,
+              canvas, áudio e hardware com um baseline local; monitora eventos <code>isTrusted</code>, jitter de
+              digitação e perda de foco para detectar automação/overlay de phishing.
+            </p>
+            <p className="opacity-70">
+              Um PWA não enxerga processos do sistema — para varredura de arquivos use um antivírus nativo.
+            </p>
           </div>
         </div>
       </Card>
