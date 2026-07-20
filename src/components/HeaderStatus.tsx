@@ -13,7 +13,9 @@ export const HeaderStatus = () => {
   const [supported, setSupported] = useState(true);
 
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000 * 30);
+    const tick = () => setNow(new Date());
+    tick();
+    const t = setInterval(tick, 1000);
     return () => clearInterval(t);
   }, []);
 
@@ -42,7 +44,7 @@ export const HeaderStatus = () => {
     };
   }, []);
 
-  const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const date = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
 
   const BatteryIcon = charging
