@@ -12,6 +12,7 @@ import {
   getNetworkInfo, getBatteryInfo, formatDuration,
   type StorageInfo, type CacheInfo, type MemoryInfo, type NetworkInfo, type BatteryInfo,
 } from "@/lib/deviceStorage";
+import { PerformanceCards } from "@/components/PerformanceCards";
 
 interface MetricRow {
   id: string;
