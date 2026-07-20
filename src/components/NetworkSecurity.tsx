@@ -15,6 +15,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LiveTrafficChart } from "@/components/LiveTrafficChart";
 import { toast } from "sonner";
 
 type CheckStatus = "idle" | "running" | "safe" | "warning" | "danger";
@@ -320,6 +321,11 @@ export function NetworkSecurity() {
             </p>
           </div>
         </div>
+
+        <div className="mb-4">
+          <LiveTrafficChart />
+        </div>
+
 
         {scanned && (
           <div className="grid grid-cols-3 gap-2 mb-4">
