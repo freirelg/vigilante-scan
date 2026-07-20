@@ -120,11 +120,12 @@ const Index = () => {
             {renderContent()}
           </motion.div>
         </AnimatePresence>
-      </main>
+        </main>
 
-      {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
-    </div>
+        {/* Bottom Navigation */}
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+    </>
   );
 };
 
