@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { checkPasswordPwned } from "@/lib/hibp";
 import { PasswordRiskSummary } from "@/components/PasswordRiskSummary";
+import { PasswordCsvImport } from "@/components/PasswordCsvImport";
 
 interface PasswordCheck {
   label: string;
