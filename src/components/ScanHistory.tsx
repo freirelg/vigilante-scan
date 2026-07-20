@@ -14,13 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  Cell,
 } from "recharts";
 import { getScanHistory, clearScanHistory, ScanRecord } from "@/lib/scanHistory";
 
@@ -134,10 +135,24 @@ export function ScanHistory() {
             Evolução do score
           </h3>
         </div>
-        <div className="h-48 w-full">
+        <div className="h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <BarChart
+              data={chartData}
+              margin={{ top: 16, right: 16, left: -16, bottom: 0 }}
+              barCategoryGap="25%"
+            >
+              <defs>
+                <linearGradient id="bar3dFront" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
+                </linearGradient>
+                <linearGradient id="bar3dSide" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.75} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
               <XAxis
                 dataKey="idx"
                 tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
@@ -151,6 +166,7 @@ export function ScanHistory() {
                 axisLine={false}
               />
               <Tooltip
+                cursor={{ fill: "hsl(var(--muted) / 0.3)" }}
                 contentStyle={{
                   background: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
@@ -162,15 +178,50 @@ export function ScanHistory() {
                 }
                 formatter={(v: number) => [`${v}`, "Score"]}
               />
-              <Line
-                type="monotone"
+              <Bar
                 dataKey="score"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2.5}
-                dot={{ r: 3, fill: "hsl(var(--primary))" }}
-                activeDot={{ r: 5 }}
-              />
-            </LineChart>
+                shape={(props: any) => {
+                  const { x, y, width, height } = props;
+                  if (height <= 0) return <g />;
+                  const depth = Math.min(10, width * 0.35);
+                  const topPath = `M${x},${y} L${x + depth},${y - depth} L${x + width + depth},${y - depth} L${x + width},${y} Z`;
+                  const sidePath = `M${x + width},${y} L${x + width + depth},${y - depth} L${x + width + depth},${y + height - depth} L${x + width},${y + height} Z`;
+                  return (
+                    <g>
+                      {/* shadow */}
+                      <ellipse
+                        cx={x + width / 2 + depth / 2}
+                        cy={y + height + 3}
+                        rx={width / 2}
+                        ry={2}
+                        fill="hsl(var(--primary))"
+                        opacity={0.25}
+                      />
+                      {/* front */}
+                      <rect x={x} y={y} width={width} height={height} fill="url(#bar3dFront)" />
+                      {/* top */}
+                      <path d={topPath} fill="hsl(var(--primary))" opacity={0.9} />
+                      {/* side */}
+                      <path d={sidePath} fill="url(#bar3dSide)" />
+                      {/* highlight edge */}
+                      <line
+                        x1={x}
+                        y1={y}
+                        x2={x + width}
+                        y2={y}
+                        stroke="hsl(var(--primary-foreground))"
+                        strokeOpacity={0.4}
+                        strokeWidth={1}
+                      />
+                    </g>
+                  );
+                }}
+              >
+                {chartData.map((d, i) => (
+                  <Cell key={i} />
+                ))}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </Card>
