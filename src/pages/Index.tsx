@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Bell } from "lucide-react";
 import { SecurityScanner } from "@/components/SecurityScanner";
 import { DeviceOptimizer } from "@/components/DeviceOptimizer";
 import { PasswordAnalyzer } from "@/components/PasswordAnalyzer";
