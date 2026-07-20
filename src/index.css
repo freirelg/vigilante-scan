@@ -168,3 +168,16 @@
     opacity: 0;
   }
 }
+
+/* Power saver: reduce motion and disable heavy animations globally */
+html.power-saver *,
+html.power-saver *::before,
+html.power-saver *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+html.power-saver [data-heavy-anim="true"] {
+  display: none !important;
+}
