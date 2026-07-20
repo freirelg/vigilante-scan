@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { checkPasswordPwned } from "@/lib/hibp";
 import { PasswordRiskSummary } from "@/components/PasswordRiskSummary";
+import { PasswordCsvImport } from "@/components/PasswordCsvImport";
 
 interface PasswordCheck {
   label: string;
@@ -236,6 +237,28 @@ export function PasswordAnalyzer() {
           </Button>
         </div>
       </motion.div>
+
+      {/* CSV import from browser vault */}
+      <PasswordCsvImport
+        onImport={(items) => {
+          const now = Date.now();
+          const newEntries: AuditedPassword[] = items.map((it, i) => {
+            const a = analyzePasswordStrength(it.password);
+            return {
+              id: `${now}-${i}-${crypto.randomUUID()}`,
+              service: it.service,
+              password: it.password,
+              strength: a.strength,
+              issues: a.issues,
+              suggestions: a.suggestions,
+              pwned: it.pwned,
+              pwnedCount: it.count,
+              checking: false,
+            };
+          });
+          setAudited((prev) => [...newEntries, ...prev]);
+        }}
+      />
 
       {/* Risk summary (reuse + weakness) */}
       <PasswordRiskSummary entries={audited} />
