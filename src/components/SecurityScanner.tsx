@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { enqueueUrlScan } from "@/lib/scanQueue";
-import { ScanQueueHistory } from "@/components/ScanQueueHistory";
 
 interface Threat {
   id: string;
@@ -45,10 +43,30 @@ export function SecurityScanner() {
       toast.error("Cole uma URL ou domínio para analisar");
       return;
     }
-    enqueueUrlScan(vtUrl.trim());
-    toast.success("Adicionado à fila de análise");
-    setVtUrl("");
+    setVtLoading(true);
     setVtResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("virustotal-scan", {
+        body: { target: vtUrl.trim() },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      setVtResult(data);
+      localStorage.setItem("last-vt-scan", JSON.stringify(data));
+      if (data.status === "queued") {
+        toast.info("Análise em fila no VirusTotal. Tente novamente em alguns segundos.");
+      } else if (data.verdict === "clean") {
+        toast.success(`URL limpa em ${data.stats.total} engines de antivírus`);
+      } else if (data.verdict === "suspicious") {
+        toast.warning(`${data.stats.suspicious} engine(s) marcaram como suspeita`);
+      } else {
+        toast.error(`⚠️ ${data.stats.malicious} engine(s) detectaram malware!`);
+      }
+    } catch (e: any) {
+      toast.error("Erro ao consultar VirusTotal: " + (e.message || "desconhecido"));
+    } finally {
+      setVtLoading(false);
+    }
   };
 
   const phases = [
@@ -233,8 +251,6 @@ export function SecurityScanner() {
 
   return (
     <div className="space-y-6">
-      <ScanQueueHistory />
-
       {/* VirusTotal URL Scanner (REAL) */}
       <div className="glass-card p-4 space-y-3 border-primary/20">
         <div className="flex items-center gap-2">

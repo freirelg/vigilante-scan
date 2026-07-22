@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Download, Smartphone, Share, Plus, CheckCircle, Monitor, Apple } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Phone3D } from "@/components/Phone3D";
 import { toast } from "sonner";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -81,13 +80,17 @@ export function InstallPrompt() {
     <div className="space-y-6">
       {/* Hero Section */}
       <motion.div
-        className="glass-card p-8 text-center overflow-hidden"
+        className="glass-card p-8 text-center"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="mb-4">
-          <Phone3D size={220} />
-        </div>
+        <motion.div
+          className="w-24 h-24 mx-auto rounded-full gradient-primary flex items-center justify-center mb-6 glow-primary"
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <Smartphone className="w-12 h-12 text-primary-foreground" />
+        </motion.div>
         <h2 className="text-2xl font-bold text-foreground mb-2">
           Instale o SecureGuard
         </h2>
