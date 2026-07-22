@@ -152,6 +152,20 @@ export function NetworkSecurity() {
         icon: <Server className="w-5 h-5" />,
         status: "running",
       },
+      {
+        id: "doh",
+        title: "DNS-over-HTTPS (DoH)",
+        description: "Testando resolvedores DNS criptografados",
+        icon: <ShieldCheck className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "mixed",
+        title: "Conteúdo Misto (Mixed Content)",
+        description: "Procurando recursos HTTP em página HTTPS",
+        icon: <FileWarning className="w-5 h-5" />,
+        status: "running",
+      },
     ];
 
     setChecks(initialChecks);
