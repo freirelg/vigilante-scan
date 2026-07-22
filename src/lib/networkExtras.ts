@@ -478,3 +478,146 @@ export async function inspectSecurityHeaders(): Promise<SecurityHeadersResult> {
     };
   }
 }
+
+// ---------- Connection Quality (navigator.connection) ----------
+export interface ConnectionQualityResult {
+  supported: boolean;
+  effectiveType: string | null; // 'slow-2g' | '2g' | '3g' | '4g'
+  downlinkMbps: number | null;
+  rttMs: number | null;
+  saveData: boolean;
+  type: string | null; // 'wifi' | 'cellular' | ...
+  quality: "excellent" | "good" | "fair" | "poor" | "unknown";
+}
+
+export function checkConnectionQuality(): ConnectionQualityResult {
+  const nav = navigator as Navigator & { connection?: any; mozConnection?: any; webkitConnection?: any };
+  const c = nav.connection || nav.mozConnection || nav.webkitConnection;
+  if (!c) {
+    return {
+      supported: false,
+      effectiveType: null,
+      downlinkMbps: null,
+      rttMs: null,
+      saveData: false,
+      type: null,
+      quality: "unknown",
+    };
+  }
+  const effectiveType: string | null = c.effectiveType ?? null;
+  const downlink: number | null = typeof c.downlink === "number" ? c.downlink : null;
+  const rtt: number | null = typeof c.rtt === "number" ? c.rtt : null;
+  const saveData: boolean = !!c.saveData;
+  const type: string | null = c.type ?? null;
+
+  let quality: ConnectionQualityResult["quality"] = "unknown";
+  if (effectiveType === "4g" && (downlink ?? 0) >= 5 && (rtt ?? 999) <= 100) quality = "excellent";
+  else if (effectiveType === "4g") quality = "good";
+  else if (effectiveType === "3g") quality = "fair";
+  else if (effectiveType === "2g" || effectiveType === "slow-2g") quality = "poor";
+
+  return { supported: true, effectiveType, downlinkMbps: downlink, rttMs: rtt, saveData, type, quality };
+}
+
+// ---------- Port Reachability (WebSocket) ----------
+export interface PortTestResult {
+  ports: { port: number; label: string; reachable: boolean; ms: number | null }[];
+  blockedCount: number;
+  totalCount: number;
+  firewallSuspected: boolean;
+}
+
+const PORT_TARGETS = [
+  { port: 443, label: "HTTPS", url: "wss://echo.websocket.events" },
+  { port: 80, label: "HTTP/WS", url: "ws://echo.websocket.events" },
+  { port: 8080, label: "Proxy alt", url: "ws://echo.websocket.events:8080" },
+];
+
+function testPort(url: string, timeoutMs = 4000): Promise<{ reachable: boolean; ms: number | null }> {
+  return new Promise((resolve) => {
+    const start = performance.now();
+    let done = false;
+    try {
+      const ws = new WebSocket(url);
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true;
+        try { ws.close(); } catch {}
+        resolve({ reachable: false, ms: null });
+      }, timeoutMs);
+      ws.onopen = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        const ms = Math.round(performance.now() - start);
+        try { ws.close(); } catch {}
+        resolve({ reachable: true, ms });
+      };
+      ws.onerror = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve({ reachable: false, ms: null });
+      };
+    } catch {
+      resolve({ reachable: false, ms: null });
+    }
+  });
+}
+
+export async function testCommonPorts(): Promise<PortTestResult> {
+  const results = await Promise.all(
+    PORT_TARGETS.map(async (t) => {
+      const r = await testPort(t.url);
+      return { port: t.port, label: t.label, reachable: r.reachable, ms: r.ms };
+    })
+  );
+  const blockedCount = results.filter((r) => !r.reachable).length;
+  // Se 443 está bloqueado, é firewall extremo; se 80 e 8080 bloqueados mas 443 OK, é normal em redes modernas.
+  const port443 = results.find((r) => r.port === 443);
+  const firewallSuspected = port443 ? !port443.reachable : blockedCount === results.length;
+  return { ports: results, blockedCount, totalCount: results.length, firewallSuspected };
+}
+
+// ---------- Traceroute-like (timing via multiple CDNs) ----------
+export interface HopTimingResult {
+  hops: { name: string; url: string; ms: number | null; ok: boolean }[];
+  estimatedHops: number;
+  minMs: number | null;
+  maxMs: number | null;
+  spreadMs: number | null;
+  anomaly: boolean;
+}
+
+const HOP_TARGETS = [
+  { name: "Cloudflare (edge)", url: "https://cloudflare.com/cdn-cgi/trace" },
+  { name: "Google (edge)", url: "https://www.google.com/generate_204" },
+  { name: "Fastly (edge)", url: "https://www.fastly.com/robots.txt" },
+  { name: "AWS (edge)", url: "https://aws.amazon.com/robots.txt" },
+  { name: "GitHub (origin)", url: "https://api.github.com/zen" },
+];
+
+export async function estimateHops(): Promise<HopTimingResult> {
+  const hops = await Promise.all(
+    HOP_TARGETS.map(async (t) => {
+      const start = performance.now();
+      try {
+        await fetch(t.url, { cache: "no-store", mode: "no-cors" });
+        const ms = performance.now() - start;
+        return { name: t.name, url: t.url, ms, ok: true };
+      } catch {
+        return { name: t.name, url: t.url, ms: null, ok: false };
+      }
+    })
+  );
+  const times = hops.map((h) => h.ms).filter((v): v is number => v !== null);
+  const minMs = times.length ? Math.min(...times) : null;
+  const maxMs = times.length ? Math.max(...times) : null;
+  const spreadMs = minMs !== null && maxMs !== null ? maxMs - minMs : null;
+  // Estimativa grosseira: hops ~ latência mínima / 10ms por hop (aproximação em redes cabeadas)
+  const estimatedHops = minMs !== null ? Math.max(3, Math.round(minMs / 10)) : 0;
+  // Anomalia: spread > 300ms indica rota heterogênea (possível proxy em alguns caminhos)
+  const anomaly = spreadMs !== null && spreadMs > 300 && minMs !== null && spreadMs / minMs > 2;
+  return { hops, estimatedHops, minMs, maxMs, spreadMs, anomaly };
+}
+
