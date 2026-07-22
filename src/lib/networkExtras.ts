@@ -103,3 +103,105 @@ export async function scanMixedContent(): Promise<MixedContentResult> {
     upgradesInsecure,
   };
 }
+
+// ---------- TLS / Protocol info ----------
+export interface TlsInfo {
+  protocol: string;      // ex: "h2", "h3", "http/1.1"
+  label: string;         // legível
+  modern: boolean;       // HTTP/2 ou HTTP/3
+  sampleSize: number;
+  distribution: Record<string, number>;
+}
+
+export function analyzeTls(): TlsInfo {
+  const entries = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
+  const dist: Record<string, number> = {};
+  entries.forEach((e) => {
+    const p = (e.nextHopProtocol || "").toLowerCase();
+    if (!p) return;
+    dist[p] = (dist[p] || 0) + 1;
+  });
+
+  // escolhe o protocolo dominante
+  let dominant = "";
+  let max = 0;
+  Object.entries(dist).forEach(([k, v]) => {
+    if (v > max) { max = v; dominant = k; }
+  });
+
+  const labelMap: Record<string, string> = {
+    "h3": "HTTP/3 (QUIC)",
+    "h3-29": "HTTP/3 (QUIC draft-29)",
+    "h2": "HTTP/2",
+    "http/1.1": "HTTP/1.1 (legado)",
+    "http/1.0": "HTTP/1.0 (legado)",
+  };
+
+  const modern = dominant === "h2" || dominant.startsWith("h3");
+
+  return {
+    protocol: dominant || "desconhecido",
+    label: labelMap[dominant] || dominant || "Desconhecido",
+    modern,
+    sampleSize: entries.length,
+    distribution: dist,
+  };
+}
+
+// ---------- Latência & Jitter reais ----------
+export interface LatencyResult {
+  endpoints: { name: string; url: string; samples: number[]; avg: number | null; jitter: number | null; ok: boolean }[];
+  avgAll: number | null;
+  jitterAll: number | null;
+  anomaly: boolean; // desvio grande entre endpoints => rota suspeita
+}
+
+const LATENCY_ENDPOINTS = [
+  { name: "Cloudflare", url: "https://1.1.1.1/cdn-cgi/trace" },
+  { name: "Google", url: "https://www.google.com/generate_204" },
+  { name: "GitHub", url: "https://api.github.com/zen" },
+];
+
+async function pingOnce(url: string): Promise<number | null> {
+  const start = performance.now();
+  try {
+    await fetch(url, { cache: "no-store", mode: "no-cors" });
+    return performance.now() - start;
+  } catch {
+    return null;
+  }
+}
+
+export async function measureLatency(samplesPerEndpoint = 3): Promise<LatencyResult> {
+  const results = await Promise.all(
+    LATENCY_ENDPOINTS.map(async (ep) => {
+      const samples: number[] = [];
+      for (let i = 0; i < samplesPerEndpoint; i++) {
+        const t = await pingOnce(ep.url);
+        if (t !== null) samples.push(t);
+      }
+      const avg = samples.length ? samples.reduce((a, b) => a + b, 0) / samples.length : null;
+      let jitter: number | null = null;
+      if (samples.length > 1 && avg !== null) {
+        const variance = samples.reduce((s, v) => s + (v - avg) ** 2, 0) / samples.length;
+        jitter = Math.sqrt(variance);
+      }
+      return { name: ep.name, url: ep.url, samples, avg, jitter, ok: samples.length > 0 };
+    })
+  );
+
+  const avgs = results.map((r) => r.avg).filter((v): v is number => v !== null);
+  const jitters = results.map((r) => r.jitter).filter((v): v is number => v !== null);
+  const avgAll = avgs.length ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
+  const jitterAll = jitters.length ? jitters.reduce((a, b) => a + b, 0) / jitters.length : null;
+
+  // Anomalia: se o endpoint mais lento é > 3x o mais rápido, algo está roteando estranho
+  let anomaly = false;
+  if (avgs.length >= 2) {
+    const min = Math.min(...avgs);
+    const max = Math.max(...avgs);
+    if (min > 0 && max / min > 3 && max - min > 200) anomaly = true;
+  }
+
+  return { endpoints: results, avgAll, jitterAll, anomaly };
+}

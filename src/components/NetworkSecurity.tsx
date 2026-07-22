@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiveTrafficChart } from "@/components/LiveTrafficChart";
-import { checkDoH, scanMixedContent } from "@/lib/networkExtras";
+import { checkDoH, scanMixedContent, analyzeTls, measureLatency } from "@/lib/networkExtras";
 import { toast } from "sonner";
 
 type CheckStatus = "idle" | "running" | "safe" | "warning" | "danger";
@@ -164,6 +164,20 @@ export function NetworkSecurity() {
         title: "Conteúdo Misto (Mixed Content)",
         description: "Procurando recursos HTTP em página HTTPS",
         icon: <FileWarning className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "tls",
+        title: "Protocolo HTTP (TLS)",
+        description: "Detectando HTTP/2, HTTP/3 (QUIC) ou legado",
+        icon: <Server className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "latency",
+        title: "Latência & Jitter",
+        description: "Medindo ping para múltiplos endpoints",
+        icon: <Radio className="w-5 h-5" />,
         status: "running",
       },
     ];
@@ -327,6 +341,65 @@ export function NetworkSecurity() {
                   ? "Substitua as URLs http:// por https:// e adicione o header CSP 'upgrade-insecure-requests' para forçar o navegador a promover pedidos inseguros."
                   : !mixed.hasCSP && mixed.pageIsHttps
                     ? "Adicione um Content-Security-Policy no servidor para reforçar a proteção contra scripts externos."
+                    : undefined,
+            }
+          : c
+      )
+    );
+
+    // 6. TLS / Protocol (real via nextHopProtocol)
+    const tls = analyzeTls();
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "tls"
+          ? {
+              ...c,
+              status: tls.sampleSize === 0
+                ? "warning"
+                : tls.modern
+                  ? "safe"
+                  : "warning",
+              details: tls.sampleSize === 0
+                ? "Nenhum recurso analisado ainda"
+                : `Protocolo dominante: ${tls.label} (${tls.sampleSize} recursos)`,
+              data: Object.entries(tls.distribution).map(
+                ([k, v]) => `${k}: ${v}`
+              ),
+              recommendation: !tls.modern && tls.sampleSize > 0
+                ? "Ative HTTP/2 ou HTTP/3 (QUIC) no servidor/CDN — protocolos modernos oferecem multiplexing, header compression e menor latência frente ao HTTP/1.1."
+                : undefined,
+            }
+          : c
+      )
+    );
+
+    // 7. Latência & Jitter (real)
+    const lat = await measureLatency(3);
+    const okEndpoints = lat.endpoints.filter((e) => e.ok);
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "latency"
+          ? {
+              ...c,
+              status: okEndpoints.length === 0
+                ? "danger"
+                : lat.anomaly || (lat.avgAll ?? 0) > 400
+                  ? "warning"
+                  : "safe",
+              details: okEndpoints.length === 0
+                ? "Nenhum endpoint respondeu — conexão instável ou bloqueada"
+                : `Média ${Math.round(lat.avgAll ?? 0)}ms • Jitter ${Math.round(lat.jitterAll ?? 0)}ms`,
+              data: lat.endpoints.map((e) =>
+                e.ok
+                  ? `${e.name}: ${Math.round(e.avg ?? 0)}ms (jitter ${Math.round(e.jitter ?? 0)}ms)`
+                  : `${e.name}: falhou`
+              ),
+              recommendation: lat.anomaly
+                ? "Diferença grande de latência entre endpoints — possível proxy, VPN mal configurada ou roteamento anômalo interceptando parte do tráfego."
+                : (lat.avgAll ?? 0) > 400
+                  ? "Latência alta (>400ms). Verifique a qualidade do Wi-Fi/celular ou se há VPN adicionando saltos."
+                  : (lat.jitterAll ?? 0) > 80
+                    ? "Jitter elevado indica conexão instável — ruim para chamadas e streaming."
                     : undefined,
             }
           : c
