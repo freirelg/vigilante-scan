@@ -347,6 +347,65 @@ export function NetworkSecurity() {
       )
     );
 
+    // 6. TLS / Protocol (real via nextHopProtocol)
+    const tls = analyzeTls();
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "tls"
+          ? {
+              ...c,
+              status: tls.sampleSize === 0
+                ? "warning"
+                : tls.modern
+                  ? "safe"
+                  : "warning",
+              details: tls.sampleSize === 0
+                ? "Nenhum recurso analisado ainda"
+                : `Protocolo dominante: ${tls.label} (${tls.sampleSize} recursos)`,
+              data: Object.entries(tls.distribution).map(
+                ([k, v]) => `${k}: ${v}`
+              ),
+              recommendation: !tls.modern && tls.sampleSize > 0
+                ? "Ative HTTP/2 ou HTTP/3 (QUIC) no servidor/CDN — protocolos modernos oferecem multiplexing, header compression e menor latência frente ao HTTP/1.1."
+                : undefined,
+            }
+          : c
+      )
+    );
+
+    // 7. Latência & Jitter (real)
+    const lat = await measureLatency(3);
+    const okEndpoints = lat.endpoints.filter((e) => e.ok);
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "latency"
+          ? {
+              ...c,
+              status: okEndpoints.length === 0
+                ? "danger"
+                : lat.anomaly || (lat.avgAll ?? 0) > 400
+                  ? "warning"
+                  : "safe",
+              details: okEndpoints.length === 0
+                ? "Nenhum endpoint respondeu — conexão instável ou bloqueada"
+                : `Média ${Math.round(lat.avgAll ?? 0)}ms • Jitter ${Math.round(lat.jitterAll ?? 0)}ms`,
+              data: lat.endpoints.map((e) =>
+                e.ok
+                  ? `${e.name}: ${Math.round(e.avg ?? 0)}ms (jitter ${Math.round(e.jitter ?? 0)}ms)`
+                  : `${e.name}: falhou`
+              ),
+              recommendation: lat.anomaly
+                ? "Diferença grande de latência entre endpoints — possível proxy, VPN mal configurada ou roteamento anômalo interceptando parte do tráfego."
+                : (lat.avgAll ?? 0) > 400
+                  ? "Latência alta (>400ms). Verifique a qualidade do Wi-Fi/celular ou se há VPN adicionando saltos."
+                  : (lat.jitterAll ?? 0) > 80
+                    ? "Jitter elevado indica conexão instável — ruim para chamadas e streaming."
+                    : undefined,
+            }
+          : c
+      )
+    );
+
 
     setIsScanning(false);
     setScanned(true);
