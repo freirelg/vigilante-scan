@@ -22,21 +22,6 @@ function getZxcvbn(): ZxcvbnFactory {
   return zxcvbnInstance;
 }
 
-// Configure zxcvbn once (idempotent)
-let configured = false;
-function ensureConfigured() {
-  if (configured) return;
-  zxcvbnOptions.setOptions({
-    translations: zxcvbnPtBr.translations,
-    graphs: zxcvbnCommon.adjacencyGraphs,
-    dictionary: {
-      ...zxcvbnCommon.dictionary,
-      ...zxcvbnEn.dictionary,
-      ...zxcvbnPtBr.dictionary,
-    },
-  });
-  configured = true;
-}
 
 // ---------- Domain / service criticality ----------
 export type Criticality = "critical" | "high" | "medium" | "low";
