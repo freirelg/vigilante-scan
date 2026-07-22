@@ -206,10 +206,32 @@ function JobRow({ job }: { job: ScanJob }) {
           </div>
           <div className="text-xs text-muted-foreground mt-0.5 truncate">
             {job.status === "queued" && "Aguardando processamento..."}
-            {job.status === "running" && "Analisando..."}
+            {job.status === "running" && (job.stage || "Analisando...")}
             {job.status === "failed" && (job.error || "Falha na análise")}
             {job.status === "completed" && job.summary}
           </div>
+          {(job.status === "running" || job.status === "queued") && (
+            <div className="mt-2">
+              <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-primary via-primary to-accent"
+                  initial={{ width: 0 }}
+                  animate={{
+                    width: `${job.status === "queued" ? 3 : Math.max(3, job.progress ?? 0)}%`,
+                  }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                />
+              </div>
+              <div className="flex justify-between mt-1 text-[10px] font-mono text-muted-foreground">
+                <span>
+                  {job.status === "queued" ? "Na fila" : `${Math.round(job.progress ?? 0)}%`}
+                </span>
+                {job.status === "running" && job.startedAt && (
+                  <span>{((Date.now() - job.startedAt) / 1000).toFixed(1)}s</span>
+                )}
+              </div>
+            </div>
+          )}
           <div className="text-[10px] text-muted-foreground mt-1 font-mono">
             {formatTime(job.createdAt)}
             {job.finishedAt && ` · ${((job.finishedAt - (job.startedAt || job.createdAt)) / 1000).toFixed(1)}s`}
