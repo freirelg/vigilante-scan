@@ -245,14 +245,12 @@ export function PasswordAnalyzer() {
         onImport={(items) => {
           const now = Date.now();
           const newEntries: AuditedPassword[] = items.map((it, i) => {
-            const a = analyzePasswordStrength(it.password);
+            const audit = buildAudit(it.service, it.password);
             return {
               id: `${now}-${i}-${crypto.randomUUID()}`,
               service: it.service,
               password: it.password,
-              strength: a.strength,
-              issues: a.issues,
-              suggestions: a.suggestions,
+              ...audit,
               pwned: it.pwned,
               pwnedCount: it.count,
               checking: false,
