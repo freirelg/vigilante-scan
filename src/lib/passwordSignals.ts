@@ -244,8 +244,6 @@ export function analyzeReal(
   password: string,
   context?: { service?: string; email?: string; username?: string },
 ): StrengthResult {
-  ensureConfigured();
-
   const userInputs: string[] = [];
   if (context?.service) userInputs.push(context.service);
   if (context?.email) {
@@ -255,7 +253,7 @@ export function analyzeReal(
   }
   if (context?.username) userInputs.push(context.username);
 
-  const result = zxcvbn(password, userInputs);
+  const result = getZxcvbn().check(password, userInputs);
   const patterns = detectDangerPatterns(password, context);
 
   // Map score 0-4 to 0-100, then subtract for detected patterns
