@@ -1,10 +1,26 @@
 // Password intelligence: real entropy (zxcvbn), contextual danger patterns,
 // and domain criticality classification. 100% client-side.
 
-import { zxcvbn, zxcvbnOptions } from "@zxcvbn-ts/core";
+import { ZxcvbnFactory } from "@zxcvbn-ts/core";
 import * as zxcvbnCommon from "@zxcvbn-ts/language-common";
 import * as zxcvbnEn from "@zxcvbn-ts/language-en";
 import * as zxcvbnPtBr from "@zxcvbn-ts/language-pt-br";
+
+// Configure zxcvbn once (idempotent)
+let zxcvbnInstance: ZxcvbnFactory | null = null;
+function getZxcvbn(): ZxcvbnFactory {
+  if (zxcvbnInstance) return zxcvbnInstance;
+  zxcvbnInstance = new ZxcvbnFactory({
+    translations: zxcvbnPtBr.translations,
+    graphs: zxcvbnCommon.adjacencyGraphs,
+    dictionary: {
+      ...zxcvbnCommon.dictionary,
+      ...zxcvbnEn.dictionary,
+      ...zxcvbnPtBr.dictionary,
+    },
+  });
+  return zxcvbnInstance;
+}
 
 // Configure zxcvbn once (idempotent)
 let configured = false;
