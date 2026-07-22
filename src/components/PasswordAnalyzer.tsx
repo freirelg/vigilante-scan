@@ -313,7 +313,12 @@ export function PasswordAnalyzer() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-foreground truncate">{pw.service}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-foreground truncate">{pw.service}</p>
+                          <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${CRITICALITY_COLOR[pw.criticality]} border-current/30`}>
+                            {CRITICALITY_LABEL[pw.criticality]}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground font-mono truncate">
                             {showPasswords[pw.id] ? pw.password : "••••••••"}
@@ -325,6 +330,11 @@ export function PasswordAnalyzer() {
                             {showPasswords[pw.id] ? <EyeOff className="w-3 h-3 text-muted-foreground" /> : <Eye className="w-3 h-3 text-muted-foreground" />}
                           </button>
                         </div>
+                        {!pw.checking && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> Quebra estimada: <span className="text-foreground">{pw.crackTime}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
