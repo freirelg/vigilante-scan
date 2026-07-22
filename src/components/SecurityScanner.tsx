@@ -191,9 +191,39 @@ export function SecurityScanner() {
       },
     ]);
 
+    const snapshotResults = [
+      {
+        category: "Reputação de Hosts",
+        status: (detected.length > 0 ? "danger" : "safe") as "safe" | "warning" | "danger",
+        message: detected.length > 0
+          ? `${detected.length} host(s) sinalizado(s) pelo VirusTotal`
+          : `${scannedCount} host(s) limpos em 70+ engines`,
+        count: detected.length,
+      },
+      {
+        category: "Origens Analisadas",
+        status: (scannedCount > 0 ? "safe" : "warning") as "safe" | "warning" | "danger",
+        message: `${scannedCount}/${hosts.length} origens verificadas via VirusTotal`,
+        count: scannedCount,
+      },
+      {
+        category: "Rede",
+        status: (networkSafe ? "safe" : "danger") as "safe" | "warning" | "danger",
+        message: networkSafe ? "Conexões externas confiáveis" : "Terceiros maliciosos detectados",
+        count: 0,
+      },
+    ];
+    saveLastScan({
+      date: new Date().toISOString(),
+      hostsScanned: hosts.length,
+      threats: detected,
+      results: snapshotResults,
+    });
+
     setIsScanning(false);
     setScanComplete(true);
     setCurrentTarget("");
+
 
     if (detected.length === 0) {
       toast.success(`Escaneamento real concluído — ${scannedCount} origens limpas`);
