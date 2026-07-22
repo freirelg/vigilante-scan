@@ -15,10 +15,19 @@ import {
   RefreshCw,
   ShieldCheck,
   FileWarning,
+  MapPin,
+  ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiveTrafficChart } from "@/components/LiveTrafficChart";
-import { checkDoH, scanMixedContent, analyzeTls, measureLatency } from "@/lib/networkExtras";
+import {
+  checkDoH,
+  scanMixedContent,
+  analyzeTls,
+  measureLatency,
+  geolocateIP,
+  checkHstsPreload,
+} from "@/lib/networkExtras";
 import { toast } from "sonner";
 
 type CheckStatus = "idle" | "running" | "safe" | "warning" | "danger";
