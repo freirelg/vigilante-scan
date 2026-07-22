@@ -429,6 +429,72 @@ export function NetworkSecurity() {
       )
     );
 
+    // 8. Geolocalização do IP (real)
+    const geo = await geolocateIP();
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "geoip"
+          ? {
+              ...c,
+              status: geo.sources.every((s) => !s.ok)
+                ? "warning"
+                : geo.vpnSuspected
+                  ? "warning"
+                  : "safe",
+              details: geo.sources.every((s) => !s.ok)
+                ? "Não foi possível consultar provedores de geolocalização"
+                : geo.vpnSuspected
+                  ? `Divergência detectada • IP ${geo.ip ?? "?"} (${geo.country ?? "?"})`
+                  : `IP ${geo.ip ?? "?"} • ${geo.city ?? ""}${geo.city ? ", " : ""}${geo.country ?? "?"}`,
+              data: [
+                ...(geo.ip ? [`IP: ${geo.ip}`] : []),
+                ...(geo.org ? [`ASN/Org: ${geo.org}`] : []),
+                ...(geo.ipTimezone ? [`Fuso do IP: ${geo.ipTimezone}`] : []),
+                `Fuso do navegador: ${geo.browserTimezone}`,
+                ...geo.sources.map((s) =>
+                  `${s.name}: ${s.ok ? s.ip ?? "ok" : "falhou"}`
+                ),
+              ],
+              recommendation: !geo.ipsMatch
+                ? "Provedores retornaram IPs diferentes — possível proxy transparente, CDN intermediária ou VPN mal configurada."
+                : geo.ipTimezone && !geo.timezoneMatch
+                  ? `Fuso do IP (${geo.ipTimezone}) difere do fuso do navegador (${geo.browserTimezone}). Isso é normal com VPN, mas pode indicar proxy malicioso se você não ativou uma.`
+                  : undefined,
+            }
+          : c
+      )
+    );
+
+    // 9. HSTS Preload (real)
+    const hsts = await checkHstsPreload();
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "hsts"
+          ? {
+              ...c,
+              status: !hsts.supported
+                ? "warning"
+                : hsts.preloaded
+                  ? "safe"
+                  : "warning",
+              details: hsts.status === "local"
+                ? "Ambiente local — verificação não aplicável"
+                : hsts.status === "error"
+                  ? `Falha ao consultar hstspreload.org (${hsts.error ?? "erro"})`
+                  : hsts.preloaded
+                    ? `${hsts.domain} está na lista HSTS Preload dos navegadores`
+                    : `${hsts.domain} não está pré-carregado (status: ${hsts.status})`,
+              data: [`Domínio: ${hsts.domain}`, `Status: ${hsts.status}`],
+              recommendation: hsts.supported && !hsts.preloaded
+                ? "Envie o domínio para hstspreload.org e configure o header Strict-Transport-Security com max-age=63072000; includeSubDomains; preload para bloquear downgrade HTTPS→HTTP na primeira visita."
+                : undefined,
+            }
+          : c
+      )
+    );
+
+
+
 
     setIsScanning(false);
     setScanned(true);
