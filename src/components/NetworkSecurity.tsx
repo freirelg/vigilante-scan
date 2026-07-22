@@ -189,6 +189,20 @@ export function NetworkSecurity() {
         icon: <Radio className="w-5 h-5" />,
         status: "running",
       },
+      {
+        id: "geoip",
+        title: "Geolocalização do IP",
+        description: "Comparando IP público com fuso horário do navegador",
+        icon: <MapPin className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "hsts",
+        title: "HSTS Preload",
+        description: "Consultando lista pública de domínios HTTPS obrigatório",
+        icon: <ListChecks className="w-5 h-5" />,
+        status: "running",
+      },
     ];
 
     setChecks(initialChecks);
