@@ -22,6 +22,8 @@ export interface ScanJob {
   summary?: string;          // short human message
   data?: any;                // raw provider payload (VT stats/detections)
   error?: string;
+  progress?: number;         // 0-100 while running
+  stage?: string;            // detailed status message
 }
 
 const KEY = "freirenet:scan-queue:v1";
