@@ -366,6 +366,38 @@ export function PasswordAnalyzer() {
                           </div>
                         )}
 
+                        <div className={`p-3 rounded-lg border border-border bg-secondary/40`}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Shield className={`w-4 h-4 ${CRITICALITY_COLOR[pw.criticality]}`} />
+                            <span className="text-sm font-semibold text-foreground">
+                              Criticidade da conta: <span className={CRITICALITY_COLOR[pw.criticality]}>{CRITICALITY_LABEL[pw.criticality]}</span>
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{pw.criticalityReason}</p>
+                        </div>
+
+                        {pw.patterns.length > 0 && (
+                          <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Flame className="w-4 h-4 text-destructive" />
+                              <span className="text-sm font-semibold text-destructive">Padrões perigosos detectados</span>
+                            </div>
+                            <ul className="space-y-1.5">
+                              {pw.patterns.map((p) => (
+                                <li key={p.id} className="text-xs">
+                                  <p className="text-foreground">• {p.label}</p>
+                                  <p className="text-muted-foreground ml-3">{p.hint}</p>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {pw.warning && (
+                          <p className="text-xs text-warning">⚠ {pw.warning}</p>
+                        )}
+
+
                         {pw.suggestions.length > 0 && (
                           <>
                             <div className="flex items-center gap-2">
