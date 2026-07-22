@@ -201,7 +201,6 @@ export function SecurityScanner() {
     }
   };
 
-  useEffect(() => {
   const startScan = () => {
     setProgress(0);
     setScanComplete(false);
