@@ -166,6 +166,20 @@ export function NetworkSecurity() {
         icon: <FileWarning className="w-5 h-5" />,
         status: "running",
       },
+      {
+        id: "tls",
+        title: "Protocolo HTTP (TLS)",
+        description: "Detectando HTTP/2, HTTP/3 (QUIC) ou legado",
+        icon: <Server className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "latency",
+        title: "Latência & Jitter",
+        description: "Medindo ping para múltiplos endpoints",
+        icon: <Radio className="w-5 h-5" />,
+        status: "running",
+      },
     ];
 
     setChecks(initialChecks);
