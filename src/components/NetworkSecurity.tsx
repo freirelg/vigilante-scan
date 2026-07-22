@@ -17,6 +17,8 @@ import {
   FileWarning,
   MapPin,
   ListChecks,
+  Wifi as WifiIcon,
+  ShieldQuestion,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiveTrafficChart } from "@/components/LiveTrafficChart";
@@ -27,6 +29,8 @@ import {
   measureLatency,
   geolocateIP,
   checkHstsPreload,
+  checkCaptivePortal,
+  inspectSecurityHeaders,
 } from "@/lib/networkExtras";
 import { toast } from "sonner";
 
