@@ -135,7 +135,7 @@ async function tick() {
       const jobs = load();
       const next = jobs.find((j) => j.status === "queued");
       if (!next) break;
-      update(next.id, { status: "running", startedAt: Date.now() });
+      update(next.id, { status: "running", startedAt: Date.now(), progress: 0, stage: "Iniciando..." });
       try {
         if (next.kind === "url") await runUrlScan(next.id, next.target);
         else await runFileScan(next.id);
@@ -144,6 +144,8 @@ async function tick() {
           status: "failed",
           error: e?.message || "Erro desconhecido",
           finishedAt: Date.now(),
+          progress: 100,
+          stage: "Falha",
         });
       }
     }
@@ -152,12 +154,35 @@ async function tick() {
   }
 }
 
+// Simulate steady progress between real milestones so the UI never freezes
+function startProgressTicker(id: string, from: number, to: number, durationMs: number) {
+  const start = Date.now();
+  const timer = setInterval(() => {
+    const jobs = load();
+    const j = jobs.find((x) => x.id === id);
+    if (!j || j.status !== "running") {
+      clearInterval(timer);
+      return;
+    }
+    const elapsed = Date.now() - start;
+    const pct = Math.min(to, from + ((to - from) * elapsed) / durationMs);
+    if ((j.progress ?? 0) < pct) update(id, { progress: Math.round(pct) });
+    if (elapsed >= durationMs) clearInterval(timer);
+  }, 250);
+  return () => clearInterval(timer);
+}
+
 async function runUrlScan(id: string, target: string) {
+  update(id, { progress: 10, stage: "Enviando URL para o VirusTotal..." });
+  const stop = startProgressTicker(id, 10, 85, 8000);
   const { data, error } = await supabase.functions.invoke("virustotal-scan", {
     body: { target },
   });
+  stop();
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
+
+  update(id, { progress: 92, stage: "Consolidando resultado dos engines..." });
 
   if (data.status === "queued") {
     update(id, {
@@ -166,6 +191,8 @@ async function runUrlScan(id: string, target: string) {
       summary: "Análise ainda em fila no VirusTotal — tente novamente em instantes.",
       data,
       finishedAt: Date.now(),
+      progress: 100,
+      stage: "Aguardando VirusTotal concluir",
     });
     return;
   }
@@ -184,7 +211,7 @@ async function runUrlScan(id: string, target: string) {
       ? `${s.suspicious} engine(s) suspeitas`
       : `${s.malicious} engine(s) detectaram malware`;
 
-  update(id, { status: "completed", verdict, summary, data, finishedAt: Date.now() });
+  update(id, { status: "completed", verdict, summary, data, finishedAt: Date.now(), progress: 100, stage: "Concluído" });
 }
 
 async function runFileScan(id: string) {
