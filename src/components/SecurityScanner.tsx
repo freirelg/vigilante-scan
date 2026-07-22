@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, ShieldCheck, ShieldAlert, Bug, Fingerprint, FileWarning, Loader2, Trash2, Archive, CheckCircle, Link2, Globe, AlertCircle } from "lucide-react";
+import { Shield, ShieldCheck, ShieldAlert, Bug, Fingerprint, FileWarning, Loader2, Trash2, Archive, CheckCircle, Link2, Globe, AlertCircle, FileDown, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { saveLastScan, downloadPdfReport, downloadTextReport } from "@/lib/scanReport";
 
 interface Threat {
   id: string;
@@ -190,9 +191,39 @@ export function SecurityScanner() {
       },
     ]);
 
+    const snapshotResults = [
+      {
+        category: "Reputação de Hosts",
+        status: (detected.length > 0 ? "danger" : "safe") as "safe" | "warning" | "danger",
+        message: detected.length > 0
+          ? `${detected.length} host(s) sinalizado(s) pelo VirusTotal`
+          : `${scannedCount} host(s) limpos em 70+ engines`,
+        count: detected.length,
+      },
+      {
+        category: "Origens Analisadas",
+        status: (scannedCount > 0 ? "safe" : "warning") as "safe" | "warning" | "danger",
+        message: `${scannedCount}/${hosts.length} origens verificadas via VirusTotal`,
+        count: scannedCount,
+      },
+      {
+        category: "Rede",
+        status: (networkSafe ? "safe" : "danger") as "safe" | "warning" | "danger",
+        message: networkSafe ? "Conexões externas confiáveis" : "Terceiros maliciosos detectados",
+        count: 0,
+      },
+    ];
+    saveLastScan({
+      date: new Date().toISOString(),
+      hostsScanned: hosts.length,
+      threats: detected,
+      results: snapshotResults,
+    });
+
     setIsScanning(false);
     setScanComplete(true);
     setCurrentTarget("");
+
 
     if (detected.length === 0) {
       toast.success(`Escaneamento real concluído — ${scannedCount} origens limpas`);
@@ -604,6 +635,32 @@ export function SecurityScanner() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Report Downloads */}
+      {scanComplete && (
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            variant="outline"
+            onClick={() => {
+              try { downloadPdfReport(); toast.success("Relatório PDF gerado"); }
+              catch (e: any) { toast.error("Falha ao gerar PDF: " + (e?.message || "erro")); }
+            }}
+          >
+            <FileDown className="w-4 h-4 mr-1" />
+            Relatório PDF
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              try { downloadTextReport(); toast.success("Relatório TXT gerado"); }
+              catch (e: any) { toast.error("Falha ao gerar TXT: " + (e?.message || "erro")); }
+            }}
+          >
+            <FileText className="w-4 h-4 mr-1" />
+            Relatório TXT
+          </Button>
+        </div>
+      )}
 
       {/* Action Button */}
       <Button
