@@ -86,15 +86,14 @@ export function PasswordAnalyzer() {
       return;
     }
     setAdding(true);
-    const analysis = analyzePasswordStrength(newPassword);
+    const service = newService.trim();
+    const audit = buildAudit(service, newPassword);
     const id = crypto.randomUUID();
     const entry: AuditedPassword = {
       id,
-      service: newService.trim(),
+      service,
       password: newPassword,
-      strength: analysis.strength,
-      issues: analysis.issues,
-      suggestions: analysis.suggestions,
+      ...audit,
       pwned: false,
       pwnedCount: 0,
       checking: true,
