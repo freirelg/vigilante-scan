@@ -279,6 +279,61 @@ export function NetworkSecurity() {
       )
     );
 
+    // 4. DNS-over-HTTPS (real)
+    const doh = await checkDoH();
+    const okProviders = doh.providers.filter((p) => p.ok);
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "doh"
+          ? {
+              ...c,
+              status: okProviders.length >= 2 ? "safe" : okProviders.length === 1 ? "warning" : "danger",
+              details:
+                okProviders.length === 0
+                  ? "Nenhum resolvedor DoH acessível — DNS pode estar em texto claro"
+                  : `${okProviders.length}/${doh.providers.length} resolvedores DoH respondendo`,
+              data: doh.providers.map(
+                (p) => `${p.name}: ${p.ok ? `OK (${p.ms}ms)` : "falhou"}`
+              ),
+              recommendation:
+                okProviders.length < 2
+                  ? "Ative DNS-over-HTTPS no navegador (Chrome/Firefox → Privacidade → DNS seguro) ou no sistema para impedir que provedores vejam seus domínios."
+                  : undefined,
+            }
+          : c
+      )
+    );
+
+    // 5. Mixed Content (real)
+    const mixed = await scanMixedContent();
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "mixed"
+          ? {
+              ...c,
+              status: !mixed.pageIsHttps
+                ? "warning"
+                : mixed.insecureResources.length === 0
+                  ? "safe"
+                  : "danger",
+              details: !mixed.pageIsHttps
+                ? "Página não é HTTPS — teste não aplicável"
+                : mixed.insecureResources.length === 0
+                  ? `Nenhum recurso HTTP detectado em ${mixed.totalResources} carregados${mixed.upgradesInsecure ? " • CSP com upgrade-insecure-requests ativo" : ""}`
+                  : `${mixed.insecureResources.length} recurso(s) HTTP em página HTTPS`,
+              data: mixed.insecureResources.slice(0, 6).map((r) => `${r.type}: ${r.url}`),
+              recommendation:
+                mixed.insecureResources.length > 0
+                  ? "Substitua as URLs http:// por https:// e adicione o header CSP 'upgrade-insecure-requests' para forçar o navegador a promover pedidos inseguros."
+                  : !mixed.hasCSP && mixed.pageIsHttps
+                    ? "Adicione um Content-Security-Policy no servidor para reforçar a proteção contra scripts externos."
+                    : undefined,
+            }
+          : c
+      )
+    );
+
+
     setIsScanning(false);
     setScanned(true);
 
