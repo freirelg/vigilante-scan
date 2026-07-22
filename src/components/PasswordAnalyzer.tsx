@@ -498,6 +498,24 @@ export function PasswordAnalyzer() {
               />
             </div>
 
+            <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" /> Tempo estimado para quebra offline: <span className="text-foreground">{customAnalysis.crackTime}</span>
+            </p>
+
+            {customAnalysis.patterns.length > 0 && (
+              <div className="mt-3 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Flame className="w-4 h-4 text-destructive" />
+                  <span className="text-sm font-semibold text-destructive">Padrões perigosos</span>
+                </div>
+                <ul className="space-y-1">
+                  {customAnalysis.patterns.map((p) => (
+                    <li key={p.id} className="text-xs text-muted-foreground">• {p.label}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {customPwned && (
               <div className={`mt-3 p-3 rounded-lg border ${customPwned.pwned ? "bg-destructive/10 border-destructive/20" : "bg-success/10 border-success/20"}`}>
                 <div className="flex items-center gap-2">
