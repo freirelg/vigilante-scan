@@ -205,3 +205,121 @@ export async function measureLatency(samplesPerEndpoint = 3): Promise<LatencyRes
 
   return { endpoints: results, avgAll, jitterAll, anomaly };
 }
+
+// ---------- IP Geolocation cross-check (VPN/proxy detection) ----------
+export interface IpGeoResult {
+  ip: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  org: string | null;
+  ipTimezone: string | null;
+  browserTimezone: string;
+  timezoneMatch: boolean;
+  ipsMatch: boolean;
+  vpnSuspected: boolean;
+  sources: { name: string; ok: boolean; ip: string | null }[];
+}
+
+export async function geolocateIP(): Promise<IpGeoResult> {
+  const browserTimezone =
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown";
+  const sources: { name: string; ok: boolean; ip: string | null }[] = [];
+
+  let ipapi: any = null;
+  let ipifyIp: string | null = null;
+
+  try {
+    const r = await fetch("https://ipapi.co/json/", { cache: "no-store" });
+    if (r.ok) {
+      ipapi = await r.json();
+      sources.push({ name: "ipapi.co", ok: true, ip: ipapi?.ip ?? null });
+    } else {
+      sources.push({ name: "ipapi.co", ok: false, ip: null });
+    }
+  } catch {
+    sources.push({ name: "ipapi.co", ok: false, ip: null });
+  }
+
+  try {
+    const r = await fetch("https://api.ipify.org?format=json", { cache: "no-store" });
+    if (r.ok) {
+      const j = await r.json();
+      ipifyIp = j?.ip ?? null;
+      sources.push({ name: "ipify.org", ok: true, ip: ipifyIp });
+    } else {
+      sources.push({ name: "ipify.org", ok: false, ip: null });
+    }
+  } catch {
+    sources.push({ name: "ipify.org", ok: false, ip: null });
+  }
+
+  const ip = ipapi?.ip || ipifyIp;
+  const ipTimezone = ipapi?.timezone || null;
+  const timezoneMatch = ipTimezone ? ipTimezone === browserTimezone : true;
+  const ipsMatch = !!(ipapi?.ip && ipifyIp) ? ipapi.ip === ipifyIp : true;
+  const vpnSuspected = !ipsMatch || (!!ipTimezone && !timezoneMatch);
+
+  return {
+    ip,
+    country: ipapi?.country_name || null,
+    region: ipapi?.region || null,
+    city: ipapi?.city || null,
+    org: ipapi?.org || ipapi?.asn || null,
+    ipTimezone,
+    browserTimezone,
+    timezoneMatch,
+    ipsMatch,
+    vpnSuspected,
+    sources,
+  };
+}
+
+// ---------- HSTS Preload check ----------
+export interface HstsPreloadResult {
+  domain: string;
+  status: string; // preloaded | pending | unknown | error | local
+  preloaded: boolean;
+  supported: boolean;
+  error?: string;
+}
+
+export async function checkHstsPreload(): Promise<HstsPreloadResult> {
+  const domain = window.location.hostname;
+  if (!domain || ["localhost", "127.0.0.1"].includes(domain)) {
+    return { domain, status: "local", preloaded: false, supported: false };
+  }
+  const parts = domain.split(".");
+  const apex = parts.length > 2 ? parts.slice(-2).join(".") : domain;
+  try {
+    const r = await fetch(
+      `https://hstspreload.org/api/v2/status?domain=${encodeURIComponent(apex)}`,
+      { cache: "no-store" }
+    );
+    if (!r.ok) {
+      return {
+        domain: apex,
+        status: "error",
+        preloaded: false,
+        supported: false,
+        error: `HTTP ${r.status}`,
+      };
+    }
+    const j = await r.json();
+    const status = j?.status || "unknown";
+    return {
+      domain: apex,
+      status,
+      preloaded: status === "preloaded",
+      supported: true,
+    };
+  } catch (e: any) {
+    return {
+      domain: apex,
+      status: "error",
+      preloaded: false,
+      supported: false,
+      error: e?.message,
+    };
+  }
+}
