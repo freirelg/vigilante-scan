@@ -207,6 +207,20 @@ export function NetworkSecurity() {
         icon: <ListChecks className="w-5 h-5" />,
         status: "running",
       },
+      {
+        id: "captive",
+        title: "Portal Cativo (Captive Portal)",
+        description: "Verificando interceptação por Wi-Fi público",
+        icon: <WifiIcon className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "headers",
+        title: "Headers de Segurança do Site",
+        description: "Auditando HSTS, CSP, X-Frame, Referrer-Policy...",
+        icon: <ShieldQuestion className="w-5 h-5" />,
+        status: "running",
+      },
     ];
 
     setChecks(initialChecks);
