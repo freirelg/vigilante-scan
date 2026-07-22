@@ -22,6 +22,8 @@ export interface ScanJob {
   summary?: string;          // short human message
   data?: any;                // raw provider payload (VT stats/detections)
   error?: string;
+  progress?: number;         // 0-100 while running
+  stage?: string;            // detailed status message
 }
 
 const KEY = "freirenet:scan-queue:v1";
@@ -133,7 +135,7 @@ async function tick() {
       const jobs = load();
       const next = jobs.find((j) => j.status === "queued");
       if (!next) break;
-      update(next.id, { status: "running", startedAt: Date.now() });
+      update(next.id, { status: "running", startedAt: Date.now(), progress: 0, stage: "Iniciando..." });
       try {
         if (next.kind === "url") await runUrlScan(next.id, next.target);
         else await runFileScan(next.id);
@@ -142,6 +144,8 @@ async function tick() {
           status: "failed",
           error: e?.message || "Erro desconhecido",
           finishedAt: Date.now(),
+          progress: 100,
+          stage: "Falha",
         });
       }
     }
@@ -150,12 +154,35 @@ async function tick() {
   }
 }
 
+// Simulate steady progress between real milestones so the UI never freezes
+function startProgressTicker(id: string, from: number, to: number, durationMs: number) {
+  const start = Date.now();
+  const timer = setInterval(() => {
+    const jobs = load();
+    const j = jobs.find((x) => x.id === id);
+    if (!j || j.status !== "running") {
+      clearInterval(timer);
+      return;
+    }
+    const elapsed = Date.now() - start;
+    const pct = Math.min(to, from + ((to - from) * elapsed) / durationMs);
+    if ((j.progress ?? 0) < pct) update(id, { progress: Math.round(pct) });
+    if (elapsed >= durationMs) clearInterval(timer);
+  }, 250);
+  return () => clearInterval(timer);
+}
+
 async function runUrlScan(id: string, target: string) {
+  update(id, { progress: 10, stage: "Enviando URL para o VirusTotal..." });
+  const stop = startProgressTicker(id, 10, 85, 8000);
   const { data, error } = await supabase.functions.invoke("virustotal-scan", {
     body: { target },
   });
+  stop();
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
+
+  update(id, { progress: 92, stage: "Consolidando resultado dos engines..." });
 
   if (data.status === "queued") {
     update(id, {
@@ -164,6 +191,8 @@ async function runUrlScan(id: string, target: string) {
       summary: "Análise ainda em fila no VirusTotal — tente novamente em instantes.",
       data,
       finishedAt: Date.now(),
+      progress: 100,
+      stage: "Aguardando VirusTotal concluir",
     });
     return;
   }
@@ -182,23 +211,36 @@ async function runUrlScan(id: string, target: string) {
       ? `${s.suspicious} engine(s) suspeitas`
       : `${s.malicious} engine(s) detectaram malware`;
 
-  update(id, { status: "completed", verdict, summary, data, finishedAt: Date.now() });
+  update(id, { status: "completed", verdict, summary, data, finishedAt: Date.now(), progress: 100, stage: "Concluído" });
 }
 
 async function runFileScan(id: string) {
   const file = fileRegistry.get(id);
   if (!file) throw new Error("Arquivo não disponível (recarregue e reenvie)");
 
-  // Basic heuristic: magic bytes + entropy + suspicious strings
+  update(id, { progress: 8, stage: `Lendo arquivo (${file.name})...` });
+  await new Promise((r) => setTimeout(r, 120));
   const buf = new Uint8Array(await file.slice(0, 512 * 1024).arrayBuffer());
+
+  update(id, { progress: 28, stage: "Identificando tipo por magic bytes..." });
   const kind = detectMagic(buf);
+  await new Promise((r) => setTimeout(r, 120));
+
+  update(id, { progress: 48, stage: `Calculando entropia de Shannon (${kind})...` });
   const entropy = shannonEntropy(buf);
+  await new Promise((r) => setTimeout(r, 120));
+
+  update(id, { progress: 68, stage: "Extraindo strings imprimíveis..." });
   const strings = extractStrings(buf);
+
+  update(id, { progress: 82, stage: "Cruzando com padrões suspeitos conhecidos..." });
   const suspicious = SUSPICIOUS_PATTERNS.filter((p) => strings.match(p));
   const doubleExt = /\.(jpg|png|pdf|doc|docx|xls|xlsx|txt)\.(exe|scr|bat|cmd|vbs|js|jar|apk)$/i.test(
     file.name,
   );
+  await new Promise((r) => setTimeout(r, 100));
 
+  update(id, { progress: 94, stage: "Calculando score final..." });
   let score = 0;
   if (doubleExt) score += 60;
   if (entropy > 7.5) score += 25;
@@ -219,6 +261,8 @@ async function runFileScan(id: string) {
     summary,
     data: { kind, entropy, suspicious, doubleExt, score },
     finishedAt: Date.now(),
+    progress: 100,
+    stage: "Concluído",
   });
 }
 
