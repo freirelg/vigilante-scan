@@ -636,6 +636,32 @@ export function SecurityScanner() {
         )}
       </AnimatePresence>
 
+      {/* Report Downloads */}
+      {scanComplete && (
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            variant="outline"
+            onClick={() => {
+              try { downloadPdfReport(); toast.success("Relatório PDF gerado"); }
+              catch (e: any) { toast.error("Falha ao gerar PDF: " + (e?.message || "erro")); }
+            }}
+          >
+            <FileDown className="w-4 h-4 mr-1" />
+            Relatório PDF
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              try { downloadTextReport(); toast.success("Relatório TXT gerado"); }
+              catch (e: any) { toast.error("Falha ao gerar TXT: " + (e?.message || "erro")); }
+            }}
+          >
+            <FileText className="w-4 h-4 mr-1" />
+            Relatório TXT
+          </Button>
+        </div>
+      )}
+
       {/* Action Button */}
       <Button
         onClick={startScan}
