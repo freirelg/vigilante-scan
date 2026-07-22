@@ -227,6 +227,27 @@ export function NetworkSecurity() {
         icon: <ShieldQuestion className="w-5 h-5" />,
         status: "running",
       },
+      {
+        id: "quality",
+        title: "Qualidade da Conexão",
+        description: "Medindo velocidade, RTT e tipo de rede",
+        icon: <Gauge className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "ports",
+        title: "Portas & Firewall",
+        description: "Testando portas 443, 80 e 8080 via WebSocket",
+        icon: <Network className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "hops",
+        title: "Traceroute Aproximado",
+        description: "Estimando saltos até CDNs globais",
+        icon: <Route className="w-5 h-5" />,
+        status: "running",
+      },
     ];
 
     setChecks(initialChecks);
