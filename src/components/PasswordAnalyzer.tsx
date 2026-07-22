@@ -111,7 +111,7 @@ export function PasswordAnalyzer() {
       );
       if (result.pwned) {
         toast.error(`Senha exposta em ${result.count.toLocaleString("pt-BR")} vazamentos!`);
-      } else if (analysis.strength >= 80) {
+      } else if (audit.strength >= 80) {
         toast.success("Senha forte e não encontrada em vazamentos");
       }
     } catch {
