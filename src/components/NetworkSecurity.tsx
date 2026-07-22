@@ -19,6 +19,9 @@ import {
   ListChecks,
   Wifi as WifiIcon,
   ShieldQuestion,
+  Gauge,
+  Network,
+  Route,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiveTrafficChart } from "@/components/LiveTrafficChart";
@@ -31,6 +34,9 @@ import {
   checkHstsPreload,
   checkCaptivePortal,
   inspectSecurityHeaders,
+  checkConnectionQuality,
+  testCommonPorts,
+  estimateHops,
 } from "@/lib/networkExtras";
 import { toast } from "sonner";
 
@@ -219,6 +225,27 @@ export function NetworkSecurity() {
         title: "Headers de Segurança do Site",
         description: "Auditando HSTS, CSP, X-Frame, Referrer-Policy...",
         icon: <ShieldQuestion className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "quality",
+        title: "Qualidade da Conexão",
+        description: "Medindo velocidade, RTT e tipo de rede",
+        icon: <Gauge className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "ports",
+        title: "Portas & Firewall",
+        description: "Testando portas 443, 80 e 8080 via WebSocket",
+        icon: <Network className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "hops",
+        title: "Traceroute Aproximado",
+        description: "Estimando saltos até CDNs globais",
+        icon: <Route className="w-5 h-5" />,
         status: "running",
       },
     ];
@@ -564,6 +591,97 @@ export function NetworkSecurity() {
               ),
               recommendation: missing.length > 0
                 ? `Headers ausentes: ${missing.map((m) => m.label.split(" ")[0]).join(", ")}. ${missing[0].recommendation}`
+                : undefined,
+            }
+          : c
+      )
+    );
+
+    // 12. Qualidade da conexão (real)
+    const q = checkConnectionQuality();
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "quality"
+          ? {
+              ...c,
+              status: !q.supported
+                ? "warning"
+                : q.quality === "excellent" || q.quality === "good"
+                  ? "safe"
+                  : q.quality === "fair"
+                    ? "warning"
+                    : "danger",
+              details: !q.supported
+                ? "API Network Information não suportada neste navegador"
+                : `${q.effectiveType?.toUpperCase() ?? "?"} • ${q.downlinkMbps ?? "?"} Mbps • RTT ${q.rttMs ?? "?"}ms`,
+              data: [
+                ...(q.type ? [`Tipo: ${q.type}`] : []),
+                ...(q.effectiveType ? [`Effective: ${q.effectiveType}`] : []),
+                ...(q.downlinkMbps !== null ? [`Downlink: ${q.downlinkMbps} Mbps`] : []),
+                ...(q.rttMs !== null ? [`RTT: ${q.rttMs} ms`] : []),
+                ...(q.saveData ? ["Save-Data: ativo"] : []),
+              ],
+              recommendation: q.quality === "poor"
+                ? "Conexão muito lenta — evite streaming pesado e considere ativar Save-Data no navegador."
+                : q.saveData
+                  ? "Save-Data ativo: o navegador está pedindo economia. O app respeita isso reduzindo assets."
+                  : undefined,
+            }
+          : c
+      )
+    );
+
+    // 13. Portas & Firewall (real via WebSocket)
+    const ports = await testCommonPorts();
+    const blocked = ports.ports.filter((p) => !p.reachable);
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "ports"
+          ? {
+              ...c,
+              status: ports.firewallSuspected
+                ? "danger"
+                : blocked.length === 0
+                  ? "safe"
+                  : "warning",
+              details: ports.firewallSuspected
+                ? "Porta 443 bloqueada — firewall extremo ou rede corporativa restritiva"
+                : blocked.length === 0
+                  ? "Todas as portas testadas estão acessíveis"
+                  : `${blocked.length}/${ports.totalCount} portas bloqueadas`,
+              data: ports.ports.map((p) =>
+                p.reachable ? `${p.port} (${p.label}): OK${p.ms ? ` ${p.ms}ms` : ""}` : `${p.port} (${p.label}): bloqueada`
+              ),
+              recommendation: ports.firewallSuspected
+                ? "Sem porta 443 a maior parte da web quebra. Verifique firewall corporativo, proxy ou possível bloqueio de operadora."
+                : blocked.length > 0
+                  ? "Portas 80/8080 bloqueadas é comum e saudável — reduz ataques a serviços legados."
+                  : undefined,
+            }
+          : c
+      )
+    );
+
+    // 14. Traceroute aproximado (real timing)
+    const hops = await estimateHops();
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "hops"
+          ? {
+              ...c,
+              status: hops.hops.every((h) => !h.ok)
+                ? "danger"
+                : hops.anomaly
+                  ? "warning"
+                  : "safe",
+              details: hops.hops.every((h) => !h.ok)
+                ? "Nenhuma CDN respondeu — conexão bloqueada"
+                : `~${hops.estimatedHops} saltos • Min ${Math.round(hops.minMs ?? 0)}ms • Spread ${Math.round(hops.spreadMs ?? 0)}ms`,
+              data: hops.hops.map((h) =>
+                h.ok ? `${h.name}: ${Math.round(h.ms ?? 0)}ms` : `${h.name}: falhou`
+              ),
+              recommendation: hops.anomaly
+                ? "Latência muito desigual entre CDNs — parte do tráfego pode estar passando por proxy ou VPN parcial."
                 : undefined,
             }
           : c
