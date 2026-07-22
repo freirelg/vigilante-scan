@@ -511,7 +511,64 @@ export function NetworkSecurity() {
       )
     );
 
+    // 10. Captive Portal (real, best-effort)
+    const captive = await checkCaptivePortal();
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "captive"
+          ? {
+              ...c,
+              status: captive.captiveDetected
+                ? "danger"
+                : captive.inconclusive
+                  ? "warning"
+                  : "safe",
+              details: captive.captiveDetected
+                ? "Possível portal cativo interceptando a saída"
+                : captive.inconclusive
+                  ? "Verificação inconclusiva neste contexto"
+                  : "Rede aberta — sem interceptação detectada",
+              data: captive.endpoints.map((e) =>
+                e.ok ? `${e.name}: OK${e.ms ? ` (${e.ms}ms)` : ""}` : `${e.name}: falhou`
+              ),
+              recommendation: captive.captiveDetected
+                ? "Se você está em Wi-Fi público, aceite o portal apenas por HTTPS e evite digitar senhas até estar autenticado. Considere usar VPN."
+                : captive.inconclusive
+                  ? captive.reason
+                  : undefined,
+            }
+          : c
+      )
+    );
 
+    // 11. Security Headers (real)
+    const hdr = await inspectSecurityHeaders();
+    const missing = hdr.items.filter((i) => !i.present);
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "headers"
+          ? {
+              ...c,
+              status: !hdr.ok
+                ? "warning"
+                : hdr.score >= 80
+                  ? "safe"
+                  : hdr.score >= 40
+                    ? "warning"
+                    : "danger",
+              details: !hdr.ok
+                ? `Falha ao ler headers${hdr.error ? ` (${hdr.error})` : ""}`
+                : `${hdr.items.length - missing.length}/${hdr.items.length} headers presentes • Score ${hdr.score}/100`,
+              data: hdr.items.map(
+                (i) => `${i.present ? "✓" : "✗"} ${i.label}`
+              ),
+              recommendation: missing.length > 0
+                ? `Headers ausentes: ${missing.map((m) => m.label.split(" ")[0]).join(", ")}. ${missing[0].recommendation}`
+                : undefined,
+            }
+          : c
+      )
+    );
 
 
     setIsScanning(false);
