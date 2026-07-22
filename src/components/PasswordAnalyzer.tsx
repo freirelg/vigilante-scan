@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, EyeOff, Lock, Shield, AlertTriangle, CheckCircle,
-  Copy, RefreshCw, Search, Lightbulb, ChevronRight, ShieldAlert, Loader2, Trash2, Plus, Info,
+  Copy, RefreshCw, Search, Lightbulb, ChevronRight, ShieldAlert, Loader2, Trash2, Plus, Info, Clock, Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,40 +10,43 @@ import { toast } from "sonner";
 import { checkPasswordPwned } from "@/lib/hibp";
 import { PasswordRiskSummary } from "@/components/PasswordRiskSummary";
 import { PasswordCsvImport } from "@/components/PasswordCsvImport";
-
-interface PasswordCheck {
-  label: string;
-  passed: boolean;
-  suggestion?: string;
-}
+import {
+  analyzeReal, classifyCriticality, CRITICALITY_LABEL, CRITICALITY_COLOR,
+  type Criticality, type DangerPattern,
+} from "@/lib/passwordSignals";
 
 interface AuditedPassword {
   id: string;
   service: string;
   password: string;
   strength: number;
-  issues: string[];
+  score: 0 | 1 | 2 | 3 | 4;
+  crackTime: string;
+  patterns: DangerPattern[];
+  criticality: Criticality;
+  criticalityReason: string;
   suggestions: string[];
+  warning: string;
   pwned: boolean;
   pwnedCount: number;
   checking: boolean;
 }
 
-const analyzePasswordStrength = (password: string) => {
-  const checks: PasswordCheck[] = [
-    { label: "Mínimo 8 caracteres", passed: password.length >= 8, suggestion: "Use pelo menos 12 caracteres" },
-    { label: "Letra maiúscula", passed: /[A-Z]/.test(password), suggestion: "Inclua uma letra maiúscula (A-Z)" },
-    { label: "Letra minúscula", passed: /[a-z]/.test(password), suggestion: "Inclua uma letra minúscula (a-z)" },
-    { label: "Número", passed: /[0-9]/.test(password), suggestion: "Adicione números" },
-    { label: "Caractere especial", passed: /[!@#$%^&*(),.?":{}|<>]/.test(password), suggestion: "Use símbolos como !@#$%&*" },
-    { label: "Sem sequências comuns", passed: !/(123|abc|qwerty|password|senha|admin)/i.test(password), suggestion: "Evite palavras/sequências óbvias" },
-  ];
-  const passed = checks.filter((c) => c.passed).length;
-  const strength = (passed / checks.length) * 100;
-  const issues = checks.filter((c) => !c.passed).map((c) => c.label);
-  const suggestions = checks.filter((c) => !c.passed && c.suggestion).map((c) => c.suggestion!);
-  return { checks, strength, issues, suggestions };
-};
+function buildAudit(service: string, password: string) {
+  const a = analyzeReal(password, { service });
+  const c = classifyCriticality(service);
+  return {
+    strength: a.strength,
+    score: a.score,
+    crackTime: a.crackTime,
+    patterns: a.patterns,
+    suggestions: a.suggestions,
+    warning: a.warning,
+    criticality: c.level,
+    criticalityReason: c.reason,
+  };
+}
+
 
 const generateStrongPassword = (length = 16) => {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
