@@ -171,7 +171,7 @@ export function PasswordAnalyzer() {
 
   const togglePasswordVisibility = (id: string) => setShowPasswords((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  const customAnalysis = customPassword ? analyzePasswordStrength(customPassword) : null;
+  const customAnalysis = customPassword ? analyzeReal(customPassword) : null;
   const weakCount = audited.filter((p) => p.strength < 80 || p.pwned).length;
 
   return (
