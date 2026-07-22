@@ -270,11 +270,12 @@ export function analyzeReal(
     ...patterns.map((p) => p.hint),
   ];
 
+  const slow = result.crackTimes.offlineSlowHashingXPerSecond;
   return {
     score: result.score,
     strength,
-    crackTime: String(result.crackTimesDisplay.offlineSlowHashing1e4PerSecond),
-    crackTimeSeconds: Number(result.crackTimesSeconds.offlineSlowHashing1e4PerSecond) || 0,
+    crackTime: String(slow.display),
+    crackTimeSeconds: Number(slow.seconds) || 0,
     warning: result.feedback.warning ?? "",
     suggestions,
     patterns,
