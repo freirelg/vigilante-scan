@@ -13,9 +13,12 @@ import {
   Eye,
   Server,
   RefreshCw,
+  ShieldCheck,
+  FileWarning,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiveTrafficChart } from "@/components/LiveTrafficChart";
+import { checkDoH, scanMixedContent } from "@/lib/networkExtras";
 import { toast } from "sonner";
 
 type CheckStatus = "idle" | "running" | "safe" | "warning" | "danger";
