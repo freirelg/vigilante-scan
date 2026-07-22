@@ -202,6 +202,16 @@ export function SecurityScanner() {
   };
 
   useEffect(() => {
+  const startScan = () => {
+    setProgress(0);
+    setScanComplete(false);
+    setResults([]);
+    setThreats([]);
+    setCurrentTarget("Coletando origens carregadas...");
+    setIsScanning(true);
+  };
+
+  useEffect(() => {
     if (!isScanning) return;
     runRealScan().catch((e) => {
       toast.error("Falha no escaneamento real: " + (e?.message || "desconhecido"));
@@ -212,33 +222,36 @@ export function SecurityScanner() {
 
   const handleRemoveThreat = async (threatId: string) => {
     setIsRemoving(threatId);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setThreats(prev => prev.map(t => 
+    const threat = threats.find(t => t.id === threatId);
+    if (threat) setBlocklist([...getBlocklist(), threat.location]);
+    await new Promise(resolve => setTimeout(resolve, 600));
+    setThreats(prev => prev.map(t =>
       t.id === threatId ? { ...t, status: "removed" as const } : t
     ));
     setIsRemoving(null);
-    toast.success("Ameaça removida com sucesso!");
+    toast.success(`${threat?.location} adicionado ao bloqueio permanente`);
   };
 
   const handleQuarantineThreat = async (threatId: string) => {
     setIsRemoving(threatId);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setThreats(prev => prev.map(t => 
+    const threat = threats.find(t => t.id === threatId);
+    if (threat) setQuarantine([...getQuarantine(), threat.location]);
+    await new Promise(resolve => setTimeout(resolve, 400));
+    setThreats(prev => prev.map(t =>
       t.id === threatId ? { ...t, status: "quarantined" as const } : t
     ));
     setIsRemoving(null);
-    toast.success("Ameaça movida para quarentena!");
+    toast.success(`${threat?.location} movido para quarentena`);
   };
 
   const handleRemoveAll = async () => {
     setIsRemoving("all");
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    const targets = threats.filter(t => t.status === "detected").map(t => t.location);
+    setBlocklist([...getBlocklist(), ...targets]);
+    await new Promise(resolve => setTimeout(resolve, 800));
     setThreats(prev => prev.map(t => ({ ...t, status: "removed" as const })));
     setIsRemoving(null);
-    toast.success("Todas as ameaças foram removidas!");
+    toast.success(`${targets.length} origem(ns) adicionadas ao bloqueio`);
   };
 
   const getStatusColor = (status: string) => {
