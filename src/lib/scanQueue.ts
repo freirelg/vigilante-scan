@@ -218,16 +218,29 @@ async function runFileScan(id: string) {
   const file = fileRegistry.get(id);
   if (!file) throw new Error("Arquivo não disponível (recarregue e reenvie)");
 
-  // Basic heuristic: magic bytes + entropy + suspicious strings
+  update(id, { progress: 8, stage: `Lendo arquivo (${file.name})...` });
+  await new Promise((r) => setTimeout(r, 120));
   const buf = new Uint8Array(await file.slice(0, 512 * 1024).arrayBuffer());
+
+  update(id, { progress: 28, stage: "Identificando tipo por magic bytes..." });
   const kind = detectMagic(buf);
+  await new Promise((r) => setTimeout(r, 120));
+
+  update(id, { progress: 48, stage: `Calculando entropia de Shannon (${kind})...` });
   const entropy = shannonEntropy(buf);
+  await new Promise((r) => setTimeout(r, 120));
+
+  update(id, { progress: 68, stage: "Extraindo strings imprimíveis..." });
   const strings = extractStrings(buf);
+
+  update(id, { progress: 82, stage: "Cruzando com padrões suspeitos conhecidos..." });
   const suspicious = SUSPICIOUS_PATTERNS.filter((p) => strings.match(p));
   const doubleExt = /\.(jpg|png|pdf|doc|docx|xls|xlsx|txt)\.(exe|scr|bat|cmd|vbs|js|jar|apk)$/i.test(
     file.name,
   );
+  await new Promise((r) => setTimeout(r, 100));
 
+  update(id, { progress: 94, stage: "Calculando score final..." });
   let score = 0;
   if (doubleExt) score += 60;
   if (entropy > 7.5) score += 25;
@@ -248,6 +261,8 @@ async function runFileScan(id: string) {
     summary,
     data: { kind, entropy, suspicious, doubleExt, score },
     finishedAt: Date.now(),
+    progress: 100,
+    stage: "Concluído",
   });
 }
 
