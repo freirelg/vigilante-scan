@@ -19,6 +19,9 @@ import {
   ListChecks,
   Wifi as WifiIcon,
   ShieldQuestion,
+  Gauge,
+  Network,
+  Route,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiveTrafficChart } from "@/components/LiveTrafficChart";
@@ -31,6 +34,9 @@ import {
   checkHstsPreload,
   checkCaptivePortal,
   inspectSecurityHeaders,
+  checkConnectionQuality,
+  testCommonPorts,
+  estimateHops,
 } from "@/lib/networkExtras";
 import { toast } from "sonner";
 
