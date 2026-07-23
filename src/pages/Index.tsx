@@ -12,6 +12,8 @@ import { BottomNav } from "@/components/BottomNav";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { SplashScreen } from "@/components/SplashScreen";
 import { HeaderStatus } from "@/components/HeaderStatus";
+import { UpgradeBlock } from "@/components/UpgradeBlock";
+import { isPremiumTab } from "@/lib/edition";
 import { startBehaviorMonitor } from "@/lib/behavioralSignals";
 import logoAsset from "@/assets/freirenet-logo.png.asset.json";
 
@@ -22,7 +24,19 @@ const Index = () => {
     startBehaviorMonitor();
   }, []);
 
+  const premiumLabel: Record<string, string> = {
+    intrusion: "Detecção de Intrusão",
+    optimize: "Otimização do Dispositivo",
+    password: "Análise avançada de Senhas",
+    network: "Segurança de Rede avançada",
+  };
+
   const renderContent = () => {
+    if (isPremiumTab(activeTab)) {
+      return (
+        <UpgradeBlock reason="premium" featureName={premiumLabel[activeTab]} />
+      );
+    }
     switch (activeTab) {
       case "score":
         return <VulnerabilityScore />;
