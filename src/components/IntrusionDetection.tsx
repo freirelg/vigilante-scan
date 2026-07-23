@@ -194,10 +194,9 @@ export function IntrusionDetection() {
               intermediário suspeito.
             </p>
             <p>
-              <strong className="text-foreground">Análise B — Propagandas e mineradores escondidos.</strong>{" "}
-              Procura programas que ficam rodando em segundo plano sem você perceber, sites autorizados a te enviar
-              notificações indesejadas e sinais de que seu celular/computador está sendo usado para minerar moedas
-              ou ser controlado à distância (deixa o aparelho lento e quente).
+              <strong className="text-foreground">Análise B — Propagandas escondidas.</strong>{" "}
+              Procura Service Workers desconhecidos rodando em segundo plano e sites autorizados a te
+              enviar notificações indesejadas (adware clássico).
             </p>
             <p>
               <strong className="text-foreground">Análise C — Identidade do aparelho e comportamento.</strong>{" "}
