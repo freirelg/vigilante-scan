@@ -95,11 +95,14 @@ export function ScanHistory() {
     const onStorage = () => refresh();
     window.addEventListener("storage", onStorage);
     window.addEventListener("scan-history-updated", onStorage);
+    window.addEventListener("freirenet-usage-updated", onStorage);
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("scan-history-updated", onStorage);
+      window.removeEventListener("freirenet-usage-updated", onStorage);
     };
   }, []);
+
 
   const unlocked = isUnlocked();
   const used = getScansUsed();
