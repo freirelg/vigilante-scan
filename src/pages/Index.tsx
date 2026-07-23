@@ -10,6 +10,7 @@ import { VulnerabilityScore } from "@/components/VulnerabilityScore";
 import { ScanHistory } from "@/components/ScanHistory";
 import { BottomNav } from "@/components/BottomNav";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { InstallBanner } from "@/components/InstallBanner";
 import { SplashScreen } from "@/components/SplashScreen";
 import { HeaderStatus } from "@/components/HeaderStatus";
 import { UpgradeBlock } from "@/components/UpgradeBlock";
