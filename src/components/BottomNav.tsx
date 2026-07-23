@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Zap, Lock, Wifi, Gauge, History, ShieldAlert } from "lucide-react";
+import { Zap, Lock, Wifi, Gauge, History, ShieldAlert, Lock as LockIcon } from "lucide-react";
+import { isPremiumTab } from "@/lib/edition";
 
 interface BottomNavProps {
   activeTab: string;
@@ -22,7 +23,8 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
-          
+          const locked = isPremiumTab(tab.id);
+
           return (
             <button
               key={tab.id}
@@ -36,11 +38,18 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />
               )}
-              <Icon
-                className={`w-6 h-6 z-10 transition-colors duration-200 ${
-                  isActive ? "text-primary-foreground" : "text-muted-foreground"
-                }`}
-              />
+              <div className="relative z-10">
+                <Icon
+                  className={`w-6 h-6 transition-colors duration-200 ${
+                    isActive ? "text-primary-foreground" : "text-muted-foreground"
+                  }`}
+                />
+                {locked && (
+                  <span className="absolute -top-1 -right-2 bg-card border border-primary/40 rounded-full p-0.5">
+                    <LockIcon className="w-2.5 h-2.5 text-primary" />
+                  </span>
+                )}
+              </div>
               <span
                 className={`text-xs mt-1 z-10 transition-colors duration-200 ${
                   isActive ? "text-primary font-medium" : "text-muted-foreground"
@@ -55,3 +64,4 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
     </nav>
   );
 }
+

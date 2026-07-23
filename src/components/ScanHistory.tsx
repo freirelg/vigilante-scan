@@ -24,6 +24,10 @@ import {
   Cell,
 } from "recharts";
 import { getScanHistory, clearScanHistory, ScanRecord } from "@/lib/scanHistory";
+import { EDITION } from "@/lib/edition";
+import { Badge } from "@/components/ui/badge";
+
+const START_HISTORY_LIMIT = 5;
 
 function gradeStyle(grade: ScanRecord["grade"]) {
   switch (grade) {
@@ -52,7 +56,10 @@ function formatDate(iso: string) {
 export function ScanHistory() {
   const [history, setHistory] = useState<ScanRecord[]>([]);
 
-  const refresh = () => setHistory(getScanHistory());
+  const refresh = () => {
+    const all = getScanHistory();
+    setHistory(EDITION === "start" ? all.slice(0, START_HISTORY_LIMIT) : all);
+  };
 
   useEffect(() => {
     refresh();
