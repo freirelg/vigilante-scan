@@ -163,6 +163,7 @@ const Index = () => {
 
         {/* Bottom Navigation */}
         <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+        <InstallBanner />
       </div>
     </>
   );
