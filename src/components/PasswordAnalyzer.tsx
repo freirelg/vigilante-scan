@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, EyeOff, Lock, Shield, AlertTriangle, CheckCircle,
-  Copy, RefreshCw, Search, Lightbulb, ChevronRight, ShieldAlert, Loader2, Trash2, Plus, Info, Clock, Flame,
+  Copy, RefreshCw, Search, Lightbulb, ChevronRight, ShieldAlert, Loader2, Trash2, Plus, Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,43 +10,40 @@ import { toast } from "sonner";
 import { checkPasswordPwned } from "@/lib/hibp";
 import { PasswordRiskSummary } from "@/components/PasswordRiskSummary";
 import { PasswordCsvImport } from "@/components/PasswordCsvImport";
-import {
-  analyzeReal, classifyCriticality, CRITICALITY_LABEL, CRITICALITY_COLOR,
-  type Criticality, type DangerPattern,
-} from "@/lib/passwordSignals";
+
+interface PasswordCheck {
+  label: string;
+  passed: boolean;
+  suggestion?: string;
+}
 
 interface AuditedPassword {
   id: string;
   service: string;
   password: string;
   strength: number;
-  score: 0 | 1 | 2 | 3 | 4;
-  crackTime: string;
-  patterns: DangerPattern[];
-  criticality: Criticality;
-  criticalityReason: string;
+  issues: string[];
   suggestions: string[];
-  warning: string;
   pwned: boolean;
   pwnedCount: number;
   checking: boolean;
 }
 
-function buildAudit(service: string, password: string) {
-  const a = analyzeReal(password, { service });
-  const c = classifyCriticality(service);
-  return {
-    strength: a.strength,
-    score: a.score,
-    crackTime: a.crackTime,
-    patterns: a.patterns,
-    suggestions: a.suggestions,
-    warning: a.warning,
-    criticality: c.level,
-    criticalityReason: c.reason,
-  };
-}
-
+const analyzePasswordStrength = (password: string) => {
+  const checks: PasswordCheck[] = [
+    { label: "Mínimo 8 caracteres", passed: password.length >= 8, suggestion: "Use pelo menos 12 caracteres" },
+    { label: "Letra maiúscula", passed: /[A-Z]/.test(password), suggestion: "Inclua uma letra maiúscula (A-Z)" },
+    { label: "Letra minúscula", passed: /[a-z]/.test(password), suggestion: "Inclua uma letra minúscula (a-z)" },
+    { label: "Número", passed: /[0-9]/.test(password), suggestion: "Adicione números" },
+    { label: "Caractere especial", passed: /[!@#$%^&*(),.?":{}|<>]/.test(password), suggestion: "Use símbolos como !@#$%&*" },
+    { label: "Sem sequências comuns", passed: !/(123|abc|qwerty|password|senha|admin)/i.test(password), suggestion: "Evite palavras/sequências óbvias" },
+  ];
+  const passed = checks.filter((c) => c.passed).length;
+  const strength = (passed / checks.length) * 100;
+  const issues = checks.filter((c) => !c.passed).map((c) => c.label);
+  const suggestions = checks.filter((c) => !c.passed && c.suggestion).map((c) => c.suggestion!);
+  return { checks, strength, issues, suggestions };
+};
 
 const generateStrongPassword = (length = 16) => {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
@@ -86,14 +83,15 @@ export function PasswordAnalyzer() {
       return;
     }
     setAdding(true);
-    const service = newService.trim();
-    const audit = buildAudit(service, newPassword);
+    const analysis = analyzePasswordStrength(newPassword);
     const id = crypto.randomUUID();
     const entry: AuditedPassword = {
       id,
-      service,
+      service: newService.trim(),
       password: newPassword,
-      ...audit,
+      strength: analysis.strength,
+      issues: analysis.issues,
+      suggestions: analysis.suggestions,
       pwned: false,
       pwnedCount: 0,
       checking: true,
@@ -111,7 +109,7 @@ export function PasswordAnalyzer() {
       );
       if (result.pwned) {
         toast.error(`Senha exposta em ${result.count.toLocaleString("pt-BR")} vazamentos!`);
-      } else if (audit.strength >= 80) {
+      } else if (analysis.strength >= 80) {
         toast.success("Senha forte e não encontrada em vazamentos");
       }
     } catch {
@@ -171,7 +169,7 @@ export function PasswordAnalyzer() {
 
   const togglePasswordVisibility = (id: string) => setShowPasswords((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  const customAnalysis = customPassword ? analyzeReal(customPassword) : null;
+  const customAnalysis = customPassword ? analyzePasswordStrength(customPassword) : null;
   const weakCount = audited.filter((p) => p.strength < 80 || p.pwned).length;
 
   return (
@@ -245,12 +243,14 @@ export function PasswordAnalyzer() {
         onImport={(items) => {
           const now = Date.now();
           const newEntries: AuditedPassword[] = items.map((it, i) => {
-            const audit = buildAudit(it.service, it.password);
+            const a = analyzePasswordStrength(it.password);
             return {
               id: `${now}-${i}-${crypto.randomUUID()}`,
               service: it.service,
               password: it.password,
-              ...audit,
+              strength: a.strength,
+              issues: a.issues,
+              suggestions: a.suggestions,
               pwned: it.pwned,
               pwnedCount: it.count,
               checking: false,
@@ -313,12 +313,7 @@ export function PasswordAnalyzer() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-foreground truncate">{pw.service}</p>
-                          <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${CRITICALITY_COLOR[pw.criticality]} border-current/30`}>
-                            {CRITICALITY_LABEL[pw.criticality]}
-                          </span>
-                        </div>
+                        <p className="font-medium text-foreground truncate">{pw.service}</p>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground font-mono truncate">
                             {showPasswords[pw.id] ? pw.password : "••••••••"}
@@ -330,11 +325,6 @@ export function PasswordAnalyzer() {
                             {showPasswords[pw.id] ? <EyeOff className="w-3 h-3 text-muted-foreground" /> : <Eye className="w-3 h-3 text-muted-foreground" />}
                           </button>
                         </div>
-                        {!pw.checking && (
-                          <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> Quebra estimada: <span className="text-foreground">{pw.crackTime}</span>
-                          </p>
-                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -365,38 +355,6 @@ export function PasswordAnalyzer() {
                             </p>
                           </div>
                         )}
-
-                        <div className={`p-3 rounded-lg border border-border bg-secondary/40`}>
-                          <div className="flex items-center gap-2 mb-1">
-                            <Shield className={`w-4 h-4 ${CRITICALITY_COLOR[pw.criticality]}`} />
-                            <span className="text-sm font-semibold text-foreground">
-                              Criticidade da conta: <span className={CRITICALITY_COLOR[pw.criticality]}>{CRITICALITY_LABEL[pw.criticality]}</span>
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground">{pw.criticalityReason}</p>
-                        </div>
-
-                        {pw.patterns.length > 0 && (
-                          <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Flame className="w-4 h-4 text-destructive" />
-                              <span className="text-sm font-semibold text-destructive">Padrões perigosos detectados</span>
-                            </div>
-                            <ul className="space-y-1.5">
-                              {pw.patterns.map((p) => (
-                                <li key={p.id} className="text-xs">
-                                  <p className="text-foreground">• {p.label}</p>
-                                  <p className="text-muted-foreground ml-3">{p.hint}</p>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {pw.warning && (
-                          <p className="text-xs text-warning">⚠ {pw.warning}</p>
-                        )}
-
 
                         {pw.suggestions.length > 0 && (
                           <>
@@ -497,24 +455,6 @@ export function PasswordAnalyzer() {
                 animate={{ width: `${customAnalysis.strength}%` }}
               />
             </div>
-
-            <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3" /> Tempo estimado para quebra offline: <span className="text-foreground">{customAnalysis.crackTime}</span>
-            </p>
-
-            {customAnalysis.patterns.length > 0 && (
-              <div className="mt-3 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <Flame className="w-4 h-4 text-destructive" />
-                  <span className="text-sm font-semibold text-destructive">Padrões perigosos</span>
-                </div>
-                <ul className="space-y-1">
-                  {customAnalysis.patterns.map((p) => (
-                    <li key={p.id} className="text-xs text-muted-foreground">• {p.label}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
 
             {customPwned && (
               <div className={`mt-3 p-3 rounded-lg border ${customPwned.pwned ? "bg-destructive/10 border-destructive/20" : "bg-success/10 border-success/20"}`}>
