@@ -21,7 +21,7 @@ import {
   ShieldQuestion,
   Gauge,
   Network,
-  Route,
+  
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiveTrafficChart } from "@/components/LiveTrafficChart";
@@ -36,7 +36,6 @@ import {
   inspectSecurityHeaders,
   checkConnectionQuality,
   testCommonPorts,
-  estimateHops,
 } from "@/lib/networkExtras";
 import { toast } from "sonner";
 
@@ -239,13 +238,6 @@ export function NetworkSecurity() {
         title: "Portas & Firewall",
         description: "Testando portas 443, 80 e 8080 via WebSocket",
         icon: <Network className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "hops",
-        title: "Traceroute Aproximado",
-        description: "Estimando saltos até CDNs globais",
-        icon: <Route className="w-5 h-5" />,
         status: "running",
       },
     ];
@@ -662,34 +654,9 @@ export function NetworkSecurity() {
       )
     );
 
-    // 14. Traceroute aproximado (real timing)
-    const hops = await estimateHops();
-    setChecks((prev) =>
-      prev.map((c) =>
-        c.id === "hops"
-          ? {
-              ...c,
-              status: hops.hops.every((h) => !h.ok)
-                ? "danger"
-                : hops.anomaly
-                  ? "warning"
-                  : "safe",
-              details: hops.hops.every((h) => !h.ok)
-                ? "Nenhuma CDN respondeu — conexão bloqueada"
-                : `~${hops.estimatedHops} saltos • Min ${Math.round(hops.minMs ?? 0)}ms • Spread ${Math.round(hops.spreadMs ?? 0)}ms`,
-              data: hops.hops.map((h) =>
-                h.ok ? `${h.name}: ${Math.round(h.ms ?? 0)}ms` : `${h.name}: falhou`
-              ),
-              recommendation: hops.anomaly
-                ? "Latência muito desigual entre CDNs — parte do tráfego pode estar passando por proxy ou VPN parcial."
-                : undefined,
-            }
-          : c
-      )
-    );
-
 
     setIsScanning(false);
+
     setScanned(true);
 
     const finalIssues = (localCount: number, publicCount: number) => {
