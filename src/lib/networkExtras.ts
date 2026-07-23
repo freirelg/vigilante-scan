@@ -579,45 +579,4 @@ export async function testCommonPorts(): Promise<PortTestResult> {
   return { ports: results, blockedCount, totalCount: results.length, firewallSuspected };
 }
 
-// ---------- Traceroute-like (timing via multiple CDNs) ----------
-export interface HopTimingResult {
-  hops: { name: string; url: string; ms: number | null; ok: boolean }[];
-  estimatedHops: number;
-  minMs: number | null;
-  maxMs: number | null;
-  spreadMs: number | null;
-  anomaly: boolean;
-}
-
-const HOP_TARGETS = [
-  { name: "Cloudflare (edge)", url: "https://cloudflare.com/cdn-cgi/trace" },
-  { name: "Google (edge)", url: "https://www.google.com/generate_204" },
-  { name: "Fastly (edge)", url: "https://www.fastly.com/robots.txt" },
-  { name: "AWS (edge)", url: "https://aws.amazon.com/robots.txt" },
-  { name: "GitHub (origin)", url: "https://api.github.com/zen" },
-];
-
-export async function estimateHops(): Promise<HopTimingResult> {
-  const hops = await Promise.all(
-    HOP_TARGETS.map(async (t) => {
-      const start = performance.now();
-      try {
-        await fetch(t.url, { cache: "no-store", mode: "no-cors" });
-        const ms = performance.now() - start;
-        return { name: t.name, url: t.url, ms, ok: true };
-      } catch {
-        return { name: t.name, url: t.url, ms: null, ok: false };
-      }
-    })
-  );
-  const times = hops.map((h) => h.ms).filter((v): v is number => v !== null);
-  const minMs = times.length ? Math.min(...times) : null;
-  const maxMs = times.length ? Math.max(...times) : null;
-  const spreadMs = minMs !== null && maxMs !== null ? maxMs - minMs : null;
-  // Estimativa grosseira: hops ~ latência mínima / 10ms por hop (aproximação em redes cabeadas)
-  const estimatedHops = minMs !== null ? Math.max(3, Math.round(minMs / 10)) : 0;
-  // Anomalia: spread > 300ms indica rota heterogênea (possível proxy em alguns caminhos)
-  const anomaly = spreadMs !== null && spreadMs > 300 && minMs !== null && spreadMs / minMs > 2;
-  return { hops, estimatedHops, minMs, maxMs, spreadMs, anomaly };
-}
 
