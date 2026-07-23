@@ -24,8 +24,12 @@ import {
   Cell,
 } from "recharts";
 import { getScanHistory, clearScanHistory, ScanRecord } from "@/lib/scanHistory";
-import { EDITION } from "@/lib/edition";
+import { EDITION, isUnlocked, redeemCode, getScansUsed, getScanLimit } from "@/lib/edition";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { KeyRound, Lock, Unlock, CheckCircle2, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
 
 const START_HISTORY_LIMIT = 5;
 
@@ -56,10 +60,25 @@ function formatDate(iso: string) {
 export function ScanHistory() {
   const [history, setHistory] = useState<ScanRecord[]>([]);
 
+  const [code, setCode] = useState("");
+  const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
+  const { toast } = useToast();
+
   const refresh = () => {
     const all = getScanHistory();
-    setHistory(EDITION === "start" ? all.slice(0, START_HISTORY_LIMIT) : all);
+    setHistory(EDITION === "start" && !isUnlocked() ? all.slice(0, START_HISTORY_LIMIT) : all);
   };
+
+  const handleRedeem = (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = redeemCode(code);
+    setFeedback({ ok: result.ok, message: result.message });
+    if (result.ok) {
+      setCode("");
+      toast({ title: "Código aplicado", description: result.message });
+    }
+  };
+
 
   useEffect(() => {
     refresh();
@@ -72,20 +91,86 @@ export function ScanHistory() {
     };
   }, []);
 
+  const unlocked = isUnlocked();
+  const used = getScansUsed();
+  const limit = getScanLimit();
+
+  const redeemCard = EDITION === "start" ? (
+    <Card className="p-4 bg-card border-border">
+      <div className="flex items-center gap-2 mb-2">
+        {unlocked ? (
+          <Unlock className="w-4 h-4 text-success" />
+        ) : (
+          <KeyRound className="w-4 h-4 text-primary" />
+        )}
+        <h3 className="text-sm font-semibold text-foreground">
+          {unlocked ? "Acesso livre ativado" : "Liberar mais scans"}
+        </h3>
+      </div>
+      {unlocked ? (
+        <p className="text-xs text-muted-foreground">
+          Todos os recursos premium estão desbloqueados neste aparelho.
+        </p>
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground mb-3">
+            Digite uma senha para adicionar +10 scans ou liberar acesso completo.
+            Uso atual: <span className="font-semibold text-foreground">{used}/{limit}</span>
+          </p>
+          <form onSubmit={handleRedeem} className="flex gap-2">
+            <Input
+              type="password"
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value);
+                setFeedback(null);
+              }}
+              placeholder="Digite a senha"
+              maxLength={64}
+              className="flex-1"
+            />
+            <Button type="submit" size="sm" className="gap-1">
+              <Lock className="w-3.5 h-3.5" />
+              Aplicar
+            </Button>
+          </form>
+          {feedback && (
+            <div
+              className={`flex items-center gap-1.5 text-xs mt-2 ${
+                feedback.ok ? "text-success" : "text-destructive"
+              }`}
+            >
+              {feedback.ok ? (
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              ) : (
+                <XCircle className="w-3.5 h-3.5" />
+              )}
+              {feedback.message}
+            </div>
+          )}
+        </>
+      )}
+    </Card>
+  ) : null;
+
   if (history.length === 0) {
     return (
-      <Card className="p-8 bg-card border-border text-center">
-        <History className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-        <h3 className="font-semibold text-foreground mb-1">
-          Nenhum scan registrado
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          Rode uma análise na aba Score para começar a acompanhar a evolução do
-          aparelho.
-        </p>
-      </Card>
+      <div className="space-y-4">
+        {redeemCard}
+        <Card className="p-8 bg-card border-border text-center">
+          <History className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+          <h3 className="font-semibold text-foreground mb-1">
+            Nenhum scan registrado
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Rode uma análise na aba Score para começar a acompanhar a evolução do
+            aparelho.
+          </p>
+        </Card>
+      </div>
     );
   }
+
 
   const chartData = [...history]
     .slice()
@@ -110,7 +195,9 @@ export function ScanHistory() {
 
   return (
     <div className="space-y-6">
+      {redeemCard}
       {/* Summary */}
+
       <div className="grid grid-cols-3 gap-2">
         <Card className="p-3 bg-card border-border">
           <div className="text-xs text-muted-foreground">Último</div>
