@@ -69,15 +69,25 @@ export function ScanHistory() {
     setHistory(EDITION === "start" && !isUnlocked() ? all.slice(0, START_HISTORY_LIMIT) : all);
   };
 
-  const handleRedeem = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleRedeem = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = redeemCode(code);
-    setFeedback({ ok: result.ok, message: result.message });
-    if (result.ok) {
-      setCode("");
-      toast({ title: "Código aplicado", description: result.message });
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const result = await redeemCode(code);
+      setFeedback({ ok: result.ok, message: result.message });
+      if (result.ok) {
+        setCode("");
+        refresh();
+        toast({ title: "Código aplicado", description: result.message });
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
+
 
 
   useEffect(() => {
