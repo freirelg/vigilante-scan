@@ -142,10 +142,11 @@ export function ScanHistory() {
               maxLength={64}
               className="flex-1"
             />
-            <Button type="submit" size="sm" className="gap-1">
+            <Button type="submit" size="sm" className="gap-1" disabled={submitting}>
               <Lock className="w-3.5 h-3.5" />
-              Aplicar
+              {submitting ? "Validando..." : "Aplicar"}
             </Button>
+
           </form>
           {feedback && (
             <div
