@@ -324,6 +324,74 @@ export async function checkHstsPreload(): Promise<HstsPreloadResult> {
   }
 }
 
+// ---------- Captive Portal detection ----------
+export interface CaptivePortalResult {
+  supported: boolean;
+  captiveDetected: boolean;
+  inconclusive: boolean;
+  reason: string;
+  endpoints: { name: string; url: string; ok: boolean; status: number | null; ms: number | null }[];
+}
+
+const CAPTIVE_ENDPOINTS = [
+  { name: "Cloudflare", url: "http://cp.cloudflare.com/generate_204" },
+  { name: "Google", url: "http://connectivitycheck.gstatic.com/generate_204" },
+  { name: "Firefox", url: "http://detectportal.firefox.com/success.txt" },
+];
+
+export async function checkCaptivePortal(): Promise<CaptivePortalResult> {
+  const pageIsHttps = window.location.protocol === "https:";
+  const endpoints = await Promise.all(
+    CAPTIVE_ENDPOINTS.map(async (e) => {
+      const start = performance.now();
+      try {
+        const res = await fetch(e.url, { cache: "no-store", mode: "no-cors", redirect: "manual" });
+        const ms = Math.round(performance.now() - start);
+        // no-cors → opaque; status will be 0. Success = fetch didn't throw.
+        return { name: e.name, url: e.url, ok: true, status: res.status || null, ms };
+      } catch {
+        return { name: e.name, url: e.url, ok: false, status: null, ms: null };
+      }
+    })
+  );
+
+  const allFailed = endpoints.every((e) => !e.ok);
+
+  // Numa página HTTPS, fetch para HTTP é bloqueado por Mixed Content — não dá para inferir portal cativo com segurança.
+  if (pageIsHttps && allFailed) {
+    return {
+      supported: false,
+      captiveDetected: false,
+      inconclusive: true,
+      reason:
+        "Página é HTTPS: navegadores bloqueiam fetch HTTP para os endpoints de detecção. Abra este site em HTTP para o teste ser conclusivo.",
+      endpoints,
+    };
+  }
+
+  // Se algum endpoint falhou e outros não, ou todos passaram sem erro em HTTP, é forte sinal de conexão livre.
+  // Portal cativo geralmente redireciona → em no-cors o redirect é opaco e o request passa, mas com timing/URL alterada
+  // (não temos como inspecionar). Aqui usamos falha total como sinal de portal ou offline.
+  if (!pageIsHttps && allFailed) {
+    return {
+      supported: true,
+      captiveDetected: true,
+      inconclusive: false,
+      reason: "Todos os endpoints de verificação falharam — possível portal cativo bloqueando saída, ou offline.",
+      endpoints,
+    };
+  }
+
+  return {
+    supported: true,
+    captiveDetected: false,
+    inconclusive: pageIsHttps,
+    reason: pageIsHttps
+      ? "Endpoints responderam, mas em HTTPS o resultado é apenas indicativo."
+      : "Rede aberta — nenhum portal cativo detectado.",
+    endpoints,
+  };
+}
 
 // ---------- Security Headers (visual) ----------
 export interface SecurityHeaderItem {

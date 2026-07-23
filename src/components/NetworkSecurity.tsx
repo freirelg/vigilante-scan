@@ -17,7 +17,7 @@ import {
   FileWarning,
   MapPin,
   ListChecks,
-  
+  Wifi as WifiIcon,
   ShieldQuestion,
   Gauge,
   Network,
@@ -32,7 +32,7 @@ import {
   measureLatency,
   geolocateIP,
   checkHstsPreload,
-  
+  checkCaptivePortal,
   inspectSecurityHeaders,
   checkConnectionQuality,
   testCommonPorts,
@@ -210,6 +210,13 @@ export function NetworkSecurity() {
         title: "HSTS Preload",
         description: "Consultando lista pública de domínios HTTPS obrigatório",
         icon: <ListChecks className="w-5 h-5" />,
+        status: "running",
+      },
+      {
+        id: "captive",
+        title: "Portal Cativo (Captive Portal)",
+        description: "Verificando interceptação por Wi-Fi público",
+        icon: <WifiIcon className="w-5 h-5" />,
         status: "running",
       },
       {
@@ -523,6 +530,35 @@ export function NetworkSecurity() {
       )
     );
 
+    // 10. Captive Portal (real, best-effort)
+    const captive = await checkCaptivePortal();
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === "captive"
+          ? {
+              ...c,
+              status: captive.captiveDetected
+                ? "danger"
+                : captive.inconclusive
+                  ? "warning"
+                  : "safe",
+              details: captive.captiveDetected
+                ? "Possível portal cativo interceptando a saída"
+                : captive.inconclusive
+                  ? "Verificação inconclusiva neste contexto"
+                  : "Rede aberta — sem interceptação detectada",
+              data: captive.endpoints.map((e) =>
+                e.ok ? `${e.name}: OK${e.ms ? ` (${e.ms}ms)` : ""}` : `${e.name}: falhou`
+              ),
+              recommendation: captive.captiveDetected
+                ? "Se você está em Wi-Fi público, aceite o portal apenas por HTTPS e evite digitar senhas até estar autenticado. Considere usar VPN."
+                : captive.inconclusive
+                  ? captive.reason
+                  : undefined,
+            }
+          : c
+      )
+    );
 
     // 11. Security Headers (real)
     const hdr = await inspectSecurityHeaders();
