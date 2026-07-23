@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Shield, Zap, Lock, Wifi, Gauge, History, ShieldAlert } from "lucide-react";
+import { Zap, Lock, Wifi, Gauge, History, ShieldAlert } from "lucide-react";
 
 interface BottomNavProps {
   activeTab: string;
@@ -8,7 +8,6 @@ interface BottomNavProps {
 
 const tabs = [
   { id: "score", label: "Score", icon: Gauge },
-  { id: "scan", label: "Scanner", icon: Shield },
   { id: "intrusion", label: "Intrusão", icon: ShieldAlert },
   { id: "optimize", label: "Otimizar", icon: Zap },
   { id: "password", label: "Senhas", icon: Lock },
