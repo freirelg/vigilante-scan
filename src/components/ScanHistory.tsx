@@ -24,8 +24,12 @@ import {
   Cell,
 } from "recharts";
 import { getScanHistory, clearScanHistory, ScanRecord } from "@/lib/scanHistory";
-import { EDITION } from "@/lib/edition";
+import { EDITION, isUnlocked, redeemCode, getScansUsed, getScanLimit } from "@/lib/edition";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { KeyRound, Lock, Unlock, CheckCircle2, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
 
 const START_HISTORY_LIMIT = 5;
 
