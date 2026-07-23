@@ -60,6 +60,8 @@ export function ScanHistory() {
     const all = getScanHistory();
     setHistory(EDITION === "start" ? all.slice(0, START_HISTORY_LIMIT) : all);
   };
+
+  useEffect(() => {
     refresh();
     const onStorage = () => refresh();
     window.addEventListener("storage", onStorage);
