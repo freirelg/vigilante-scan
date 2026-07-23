@@ -38,7 +38,32 @@ const SENSITIVE_PERMS = [
   "clipboard-read",
   "clipboard-write",
   "persistent-storage",
+  "midi",
+  "background-sync",
+  "payment-handler",
+  "screen-wake-lock",
+  "accelerometer",
+  "gyroscope",
 ] as const;
+
+// Impact weight per permission when GRANTED (subtracted from a 100 baseline).
+// Higher = more privacy/security risk when granted.
+export const PERM_IMPACT: Record<string, number> = {
+  camera: 22,
+  microphone: 22,
+  geolocation: 20,
+  "clipboard-read": 15,
+  "clipboard-write": 8,
+  notifications: 10,
+  "persistent-storage": 6,
+  midi: 12,
+  "payment-handler": 14,
+  "background-sync": 8,
+  "screen-wake-lock": 4,
+  accelerometer: 6,
+  gyroscope: 6,
+};
+
 
 async function checkSelfHeaders() {
   try {
