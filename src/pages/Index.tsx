@@ -14,7 +14,7 @@ import { InstallBanner } from "@/components/InstallBanner";
 import { SplashScreen } from "@/components/SplashScreen";
 import { HeaderStatus } from "@/components/HeaderStatus";
 import { UpgradeBlock } from "@/components/UpgradeBlock";
-import { isPremiumTab } from "@/lib/edition";
+import { isPremiumTab, verifyStoredUnlocks } from "@/lib/edition";
 import { startBehaviorMonitor } from "@/lib/behavioralSignals";
 import logoAsset from "@/assets/freirenet-logo.png.asset.json";
 
@@ -23,7 +23,9 @@ const Index = () => {
 
   useEffect(() => {
     startBehaviorMonitor();
+    void verifyStoredUnlocks();
   }, []);
+
 
   const premiumLabel: Record<string, string> = {
     intrusion: "Detecção de Intrusão",
