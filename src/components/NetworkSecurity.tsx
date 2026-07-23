@@ -17,7 +17,7 @@ import {
   FileWarning,
   MapPin,
   ListChecks,
-  Wifi as WifiIcon,
+  
   ShieldQuestion,
   Gauge,
   Network,
