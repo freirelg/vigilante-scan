@@ -26,8 +26,6 @@ const Index = () => {
     switch (activeTab) {
       case "score":
         return <VulnerabilityScore />;
-      case "scan":
-        return <SecurityScanner />;
       case "intrusion":
         return <IntrusionDetection />;
       case "optimize":
@@ -49,8 +47,6 @@ const Index = () => {
     switch (activeTab) {
       case "score":
         return "Score de Vulnerabilidade";
-      case "scan":
-        return "Scanner de Segurança";
       case "intrusion":
         return "Detecção de Intrusão";
       case "optimize":
