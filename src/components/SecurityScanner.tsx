@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, ShieldCheck, ShieldAlert, Bug, Fingerprint, FileWarning, Loader2, Trash2, Archive, CheckCircle, Link2, Globe, AlertCircle, FileDown, FileText } from "lucide-react";
+import { Shield, ShieldCheck, ShieldAlert, Bug, Fingerprint, FileWarning, Loader2, Trash2, Archive, CheckCircle, Link2, Globe, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { saveLastScan, downloadPdfReport, downloadTextReport } from "@/lib/scanReport";
 
 interface Threat {
   id: string;
@@ -70,218 +69,143 @@ export function SecurityScanner() {
     }
   };
 
-  const [currentTarget, setCurrentTarget] = useState<string>("");
+  const phases = [
+    "Verificando aplicativos instalados...",
+    "Analisando arquivos do sistema...",
+    "Verificando conexões de rede...",
+    "Escaneando memória...",
+    "Verificando permissões...",
+    "Finalizando análise...",
+  ];
 
-  // Collect real hostnames the browser has actually loaded resources from.
-  const collectRealHosts = (): string[] => {
-    const hosts = new Set<string>();
-    hosts.add(window.location.hostname);
-    try {
-      const entries = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
-      for (const e of entries) {
-        try {
-          const u = new URL(e.name);
-          if (u.hostname && u.protocol.startsWith("http")) hosts.add(u.hostname);
-        } catch {}
-      }
-    } catch {}
-    // Cap to avoid rate limits (VirusTotal free = 4 req/min)
-    return Array.from(hosts).slice(0, 6);
-  };
-
-  // Load blocklist (real: apps can honor this to skip flagged hosts)
-  const getBlocklist = (): string[] => {
-    try { return JSON.parse(localStorage.getItem("vt-blocklist") || "[]"); } catch { return []; }
-  };
-  const setBlocklist = (list: string[]) => {
-    localStorage.setItem("vt-blocklist", JSON.stringify(Array.from(new Set(list))));
-  };
-  const getQuarantine = (): string[] => {
-    try { return JSON.parse(localStorage.getItem("vt-quarantine") || "[]"); } catch { return []; }
-  };
-  const setQuarantine = (list: string[]) => {
-    localStorage.setItem("vt-quarantine", JSON.stringify(Array.from(new Set(list))));
-  };
-
-  const severityFromStats = (m: number, s: number): "low" | "medium" | "high" =>
-    m >= 3 ? "high" : m >= 1 ? "medium" : s >= 2 ? "medium" : "low";
-
-  const runRealScan = async () => {
-    const hosts = collectRealHosts();
-    const detected: Threat[] = [];
-    let scannedCount = 0;
-    let networkSafe = true;
-
-    for (let i = 0; i < hosts.length; i++) {
-      const host = hosts[i];
-      setCurrentTarget(`Analisando ${host}...`);
-      setProgress(Math.round(((i) / hosts.length) * 100));
-
-      try {
-        const { data, error } = await supabase.functions.invoke("virustotal-scan", {
-          body: { target: host },
-        });
-        if (error) throw error;
-        if (!data || data.error) continue;
-        if (data.status !== "completed") continue;
-
-        scannedCount++;
-        const m = data.stats?.malicious ?? 0;
-        const s = data.stats?.suspicious ?? 0;
-
-        if (m > 0 || s > 0) {
-          if (host !== window.location.hostname) networkSafe = false;
-          const topDetection = data.detections?.[0];
-          const type: Threat["type"] =
-            topDetection?.result?.toLowerCase().includes("phish") ? "spyware"
-            : topDetection?.result?.toLowerCase().includes("adware") ? "adware"
-            : topDetection?.result?.toLowerCase().includes("trojan") ? "trojan"
-            : "malware";
-
-          detected.push({
-            id: `vt-${host}`,
-            name: topDetection ? `${topDetection.engine}: ${topDetection.result}` : `${m + s} detecções em ${host}`,
-            type,
-            severity: severityFromStats(m, s),
-            location: host,
-            status: "detected",
-          });
-        }
-      } catch (e) {
-        console.warn("VT scan failed for", host, e);
-      }
-    }
-
-    setProgress(100);
-    setCurrentTarget("Consolidando resultados...");
-    setThreats(detected);
-
-    setResults([
-      {
-        category: "Reputação de Hosts",
-        icon: <Bug className="w-5 h-5" />,
-        status: detected.length > 0 ? "danger" : "safe",
-        message: detected.length > 0
-          ? `${detected.length} host(s) sinalizado(s) pelo VirusTotal`
-          : `${scannedCount} host(s) limpos em 70+ engines`,
-        count: detected.length,
-      },
-      {
-        category: "Recursos Suspeitos",
-        icon: <FileWarning className="w-5 h-5" />,
-        status: detected.filter(t => t.type === "adware").length > 0 ? "warning" : "safe",
-        message: detected.filter(t => t.type === "adware").length > 0
-          ? "Adware/tracker detectado em recursos carregados"
-          : "Nenhum adware nas origens carregadas",
-        count: detected.filter(t => t.type === "adware").length,
-      },
-      {
-        category: "Origens Analisadas",
-        icon: <Globe className="w-5 h-5" />,
-        status: scannedCount > 0 ? "safe" : "warning",
-        message: `${scannedCount}/${hosts.length} origens verificadas via VirusTotal`,
-        count: scannedCount,
-      },
-      {
-        category: "Rede",
-        icon: <Shield className="w-5 h-5" />,
-        status: networkSafe ? "safe" : "danger",
-        message: networkSafe ? "Conexões externas confiáveis" : "Terceiros maliciosos detectados",
-        count: 0,
-      },
-    ]);
-
-    const snapshotResults = [
-      {
-        category: "Reputação de Hosts",
-        status: (detected.length > 0 ? "danger" : "safe") as "safe" | "warning" | "danger",
-        message: detected.length > 0
-          ? `${detected.length} host(s) sinalizado(s) pelo VirusTotal`
-          : `${scannedCount} host(s) limpos em 70+ engines`,
-        count: detected.length,
-      },
-      {
-        category: "Origens Analisadas",
-        status: (scannedCount > 0 ? "safe" : "warning") as "safe" | "warning" | "danger",
-        message: `${scannedCount}/${hosts.length} origens verificadas via VirusTotal`,
-        count: scannedCount,
-      },
-      {
-        category: "Rede",
-        status: (networkSafe ? "safe" : "danger") as "safe" | "warning" | "danger",
-        message: networkSafe ? "Conexões externas confiáveis" : "Terceiros maliciosos detectados",
-        count: 0,
-      },
-    ];
-    saveLastScan({
-      date: new Date().toISOString(),
-      hostsScanned: hosts.length,
-      threats: detected,
-      results: snapshotResults,
-    });
-
-    setIsScanning(false);
-    setScanComplete(true);
-    setCurrentTarget("");
-
-
-    if (detected.length === 0) {
-      toast.success(`Escaneamento real concluído — ${scannedCount} origens limpas`);
-    } else {
-      toast.warning(`${detected.length} ameaça(s) reais detectada(s) via VirusTotal`);
-    }
-  };
+  const mockThreats: Threat[] = [
+    {
+      id: "1",
+      name: "Trojan.AndroidOS.Agent",
+      type: "trojan",
+      severity: "high",
+      location: "/data/app/suspicious.apk",
+      status: "detected",
+    },
+    {
+      id: "2",
+      name: "Adware.MobiDash",
+      type: "adware",
+      severity: "medium",
+      location: "/sdcard/Download/free_app.apk",
+      status: "detected",
+    },
+    {
+      id: "3",
+      name: "Spyware.SMSTracker",
+      type: "spyware",
+      severity: "high",
+      location: "/data/app/tracker.apk",
+      status: "detected",
+    },
+  ];
 
   const startScan = () => {
+    setIsScanning(true);
     setProgress(0);
     setScanComplete(false);
     setResults([]);
     setThreats([]);
-    setCurrentTarget("Coletando origens carregadas...");
-    setIsScanning(true);
   };
 
   useEffect(() => {
     if (!isScanning) return;
-    runRealScan().catch((e) => {
-      toast.error("Falha no escaneamento real: " + (e?.message || "desconhecido"));
-      setIsScanning(false);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        const newProgress = prev + Math.random() * 3 + 1;
+        
+        const phaseIndex = Math.floor((newProgress / 100) * phases.length);
+        if (phaseIndex < phases.length) {
+          setCurrentPhase(phases[phaseIndex]);
+        }
+
+        if (newProgress >= 100) {
+          clearInterval(interval);
+          setIsScanning(false);
+          setScanComplete(true);
+          
+          // Simular detecção de ameaças (aleatório)
+          const detectedThreats = Math.random() > 0.3 ? mockThreats : [];
+          setThreats(detectedThreats);
+          
+          setResults([
+            {
+              category: "Malware",
+              icon: <Bug className="w-5 h-5" />,
+              status: detectedThreats.length > 0 ? "danger" : "safe",
+              message: detectedThreats.length > 0 
+                ? `${detectedThreats.length} ameaças detectadas` 
+                : "Nenhum malware detectado",
+              count: detectedThreats.length,
+            },
+            {
+              category: "Aplicativos Suspeitos",
+              icon: <FileWarning className="w-5 h-5" />,
+              status: detectedThreats.filter(t => t.type === "adware").length > 0 ? "warning" : "safe",
+              message: detectedThreats.filter(t => t.type === "adware").length > 0 
+                ? "Adware encontrado" 
+                : "Todos os apps são seguros",
+              count: detectedThreats.filter(t => t.type === "adware").length,
+            },
+            {
+              category: "Permissões",
+              icon: <Fingerprint className="w-5 h-5" />,
+              status: "warning",
+              message: "3 apps com permissões excessivas",
+              count: 3,
+            },
+            {
+              category: "Rede",
+              icon: <Shield className="w-5 h-5" />,
+              status: "safe",
+              message: "Conexão segura",
+              count: 0,
+            },
+          ]);
+          return 100;
+        }
+        return newProgress;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
   }, [isScanning]);
 
   const handleRemoveThreat = async (threatId: string) => {
     setIsRemoving(threatId);
-    const threat = threats.find(t => t.id === threatId);
-    if (threat) setBlocklist([...getBlocklist(), threat.location]);
-    await new Promise(resolve => setTimeout(resolve, 600));
-    setThreats(prev => prev.map(t =>
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setThreats(prev => prev.map(t => 
       t.id === threatId ? { ...t, status: "removed" as const } : t
     ));
     setIsRemoving(null);
-    toast.success(`${threat?.location} adicionado ao bloqueio permanente`);
+    toast.success("Ameaça removida com sucesso!");
   };
 
   const handleQuarantineThreat = async (threatId: string) => {
     setIsRemoving(threatId);
-    const threat = threats.find(t => t.id === threatId);
-    if (threat) setQuarantine([...getQuarantine(), threat.location]);
-    await new Promise(resolve => setTimeout(resolve, 400));
-    setThreats(prev => prev.map(t =>
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    setThreats(prev => prev.map(t => 
       t.id === threatId ? { ...t, status: "quarantined" as const } : t
     ));
     setIsRemoving(null);
-    toast.success(`${threat?.location} movido para quarentena`);
+    toast.success("Ameaça movida para quarentena!");
   };
 
   const handleRemoveAll = async () => {
     setIsRemoving("all");
-    const targets = threats.filter(t => t.status === "detected").map(t => t.location);
-    setBlocklist([...getBlocklist(), ...targets]);
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     setThreats(prev => prev.map(t => ({ ...t, status: "removed" as const })));
     setIsRemoving(null);
-    toast.success(`${targets.length} origem(ns) adicionadas ao bloqueio`);
+    toast.success("Todas as ameaças foram removidas!");
   };
 
   const getStatusColor = (status: string) => {
@@ -635,32 +559,6 @@ export function SecurityScanner() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Report Downloads */}
-      {scanComplete && (
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            variant="outline"
-            onClick={() => {
-              try { downloadPdfReport(); toast.success("Relatório PDF gerado"); }
-              catch (e: any) { toast.error("Falha ao gerar PDF: " + (e?.message || "erro")); }
-            }}
-          >
-            <FileDown className="w-4 h-4 mr-1" />
-            Relatório PDF
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              try { downloadTextReport(); toast.success("Relatório TXT gerado"); }
-              catch (e: any) { toast.error("Falha ao gerar TXT: " + (e?.message || "erro")); }
-            }}
-          >
-            <FileText className="w-4 h-4 mr-1" />
-            Relatório TXT
-          </Button>
-        </div>
-      )}
 
       {/* Action Button */}
       <Button
