@@ -69,15 +69,25 @@ export function ScanHistory() {
     setHistory(EDITION === "start" && !isUnlocked() ? all.slice(0, START_HISTORY_LIMIT) : all);
   };
 
-  const handleRedeem = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleRedeem = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = redeemCode(code);
-    setFeedback({ ok: result.ok, message: result.message });
-    if (result.ok) {
-      setCode("");
-      toast({ title: "Código aplicado", description: result.message });
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const result = await redeemCode(code);
+      setFeedback({ ok: result.ok, message: result.message });
+      if (result.ok) {
+        setCode("");
+        refresh();
+        toast({ title: "Código aplicado", description: result.message });
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
+
 
 
   useEffect(() => {
@@ -85,11 +95,14 @@ export function ScanHistory() {
     const onStorage = () => refresh();
     window.addEventListener("storage", onStorage);
     window.addEventListener("scan-history-updated", onStorage);
+    window.addEventListener("freirenet-usage-updated", onStorage);
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("scan-history-updated", onStorage);
+      window.removeEventListener("freirenet-usage-updated", onStorage);
     };
   }, []);
+
 
   const unlocked = isUnlocked();
   const used = getScansUsed();
@@ -129,10 +142,11 @@ export function ScanHistory() {
               maxLength={64}
               className="flex-1"
             />
-            <Button type="submit" size="sm" className="gap-1">
+            <Button type="submit" size="sm" className="gap-1" disabled={submitting}>
               <Lock className="w-3.5 h-3.5" />
-              Aplicar
+              {submitting ? "Validando..." : "Aplicar"}
             </Button>
+
           </form>
           {feedback && (
             <div
