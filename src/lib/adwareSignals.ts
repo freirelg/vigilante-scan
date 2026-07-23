@@ -1,7 +1,6 @@
-// Package B: Adware / Cryptojacking detection
+// Package B: Adware detection
 // - Rogue Service Workers registered on this origin
 // - Push notification permissions granted
-// - CPU timing analysis to detect hidden miners
 
 import type { IntrusionCheck, Severity } from "./intrusionSignals";
 
@@ -118,85 +117,10 @@ export async function checkPushPermissions(): Promise<IntrusionCheck> {
   };
 }
 
-// -------- 8. Timing / Miner detection --------
-// Mede tempo de operações crypto conhecidas. Se anormalmente lento
-// para o hardware disponível → CPU sendo consumida por outra coisa
-// (minerador, RAT, extensão pesada).
-export async function checkCpuTiming(): Promise<IntrusionCheck> {
-  const evidence: string[] = [];
-
-  // Baseline: N hashes SHA-256 sobre buffer de 1KB
-  const iterations = 400;
-  const data = new Uint8Array(1024);
-  crypto.getRandomValues(data);
-
-  const runs: number[] = [];
-  for (let r = 0; r < 3; r++) {
-    const start = performance.now();
-    for (let i = 0; i < iterations; i++) {
-      await crypto.subtle.digest("SHA-256", data);
-    }
-    runs.push(performance.now() - start);
-  }
-  const avg = runs.reduce((a, b) => a + b, 0) / runs.length;
-  const perOp = avg / iterations;
-
-  const cores = navigator.hardwareConcurrency || 4;
-  evidence.push(`Média: ${avg.toFixed(1)}ms para ${iterations} hashes SHA-256`);
-  evidence.push(`Por operação: ${perOp.toFixed(3)}ms`);
-  evidence.push(`CPU cores: ${cores}`);
-
-  // Variância entre runs — miner causa jitter alto
-  const max = Math.max(...runs);
-  const min = Math.min(...runs);
-  const jitter = ((max - min) / avg) * 100;
-  evidence.push(`Variação entre runs: ${jitter.toFixed(1)}%`);
-
-  // Heap memory se disponível
-  // @ts-ignore
-  const mem = (performance as any).memory;
-  if (mem) {
-    const usedMB = (mem.usedJSHeapSize / 1048576).toFixed(1);
-    const limitMB = (mem.jsHeapSizeLimit / 1048576).toFixed(0);
-    const pct = (mem.usedJSHeapSize / mem.jsHeapSizeLimit) * 100;
-    evidence.push(`Heap JS: ${usedMB}MB / ${limitMB}MB (${pct.toFixed(1)}%)`);
-  }
-
-  // Thresholds empíricos: em hardware moderno, SHA-256 de 1KB roda em <0.1ms
-  // >0.5ms/op indica CPU comprometida; jitter >50% indica contenção
-  let severity: Severity = "safe";
-  let description = "Performance de CPU dentro do esperado.";
-
-  if (perOp > 0.8 || jitter > 80) {
-    severity = "danger";
-    description =
-      "⚠️ CPU anormalmente lenta ou instável. Possível minerador/RAT consumindo recursos em segundo plano.";
-  } else if (perOp > 0.4 || jitter > 40) {
-    severity = "warn";
-    description = "CPU sob carga moderada — outras abas/extensões podem estar consumindo recursos.";
-  }
-
-  if (mem && mem.usedJSHeapSize / mem.jsHeapSizeLimit > 0.85) {
-    severity = severity === "safe" ? "warn" : severity;
-    description += " Uso de heap acima de 85%.";
-  }
-
-  return {
-    id: "cpu-timing",
-    title: "Análise de CPU (Miner/RAT)",
-    description,
-    severity,
-    details:
-      "Executa hashes SHA-256 em loop e mede o tempo. Mineradores cripto e RATs disputam CPU e produzem tempos anormalmente altos ou instáveis. Feche outras abas pesadas antes de reexecutar.",
-    evidence,
-  };
-}
-
 export async function runPackageBScan(): Promise<IntrusionCheck[]> {
-  const [sw, push, cpu] = await Promise.all([
+  const [sw, push] = await Promise.all([
     checkRogueServiceWorkers(),
     checkPushPermissions(),
-    checkCpuTiming(),
   ]);
-  return [sw, push, cpu];
+  return [sw, push];
 }
