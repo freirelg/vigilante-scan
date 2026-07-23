@@ -60,10 +60,25 @@ function formatDate(iso: string) {
 export function ScanHistory() {
   const [history, setHistory] = useState<ScanRecord[]>([]);
 
+  const [code, setCode] = useState("");
+  const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
+  const { toast } = useToast();
+
   const refresh = () => {
     const all = getScanHistory();
-    setHistory(EDITION === "start" ? all.slice(0, START_HISTORY_LIMIT) : all);
+    setHistory(EDITION === "start" && !isUnlocked() ? all.slice(0, START_HISTORY_LIMIT) : all);
   };
+
+  const handleRedeem = (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = redeemCode(code);
+    setFeedback({ ok: result.ok, message: result.message });
+    if (result.ok) {
+      setCode("");
+      toast({ title: "Código aplicado", description: result.message });
+    }
+  };
+
 
   useEffect(() => {
     refresh();
