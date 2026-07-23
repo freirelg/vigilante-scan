@@ -195,7 +195,9 @@ export function ScanHistory() {
 
   return (
     <div className="space-y-6">
+      {redeemCard}
       {/* Summary */}
+
       <div className="grid grid-cols-3 gap-2">
         <Card className="p-3 bg-card border-border">
           <div className="text-xs text-muted-foreground">Último</div>
