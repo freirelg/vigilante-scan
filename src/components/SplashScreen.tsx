@@ -61,8 +61,8 @@ export function SplashScreen() {
             <p className="mt-1 text-sm font-medium text-primary tracking-widest uppercase">
               SecureGuard
             </p>
-            <p className="mt-4 text-xs text-muted-foreground max-w-[240px]">
-              Proteção inteligente para seu aparelho
+            <p className="mt-4 text-xs text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
+              Inteligência em Segurança Digital na Palma da Sua Mão
             </p>
           </motion.div>
 
