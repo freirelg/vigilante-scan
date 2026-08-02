@@ -59,12 +59,17 @@ export function resetScans(): void {
   } catch {}
 }
 
+// Limite de scans temporariamente desativado
+export const SCAN_LIMIT_ENABLED = false;
+
 export function scansRemaining(): number {
+  if (!SCAN_LIMIT_ENABLED) return Infinity;
   if (isUnlocked()) return Infinity;
   return Math.max(0, getScanLimit() - getScansUsed());
 }
 
 export function isBlocked(): boolean {
+  if (!SCAN_LIMIT_ENABLED) return false;
   if (EDITION !== "start") return false;
   if (isUnlocked()) return false;
   return getScansUsed() >= getScanLimit();
