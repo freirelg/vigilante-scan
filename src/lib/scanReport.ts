@@ -1,7 +1,6 @@
 import jsPDF from "jspdf";
 import { ScanRecord } from "@/lib/scanHistory";
 import { collectRealSignals, RealSignals } from "@/lib/realSignals";
-import { supabase } from "@/integrations/supabase/client";
 
 function fmt(iso: string) {
   return new Date(iso).toLocaleString("pt-BR");
@@ -11,48 +10,6 @@ function yesNo(v: boolean | null | undefined) {
   if (v === null || v === undefined) return "Não verificado";
   return v ? "Sim" : "Não";
 }
-
-function buildAiSummary(records: ScanRecord[], s: RealSignals | null) {
-  const lines: string[] = [];
-  lines.push("Últimas análises (score/100):");
-  records.forEach((r) =>
-    lines.push(`- ${fmt(r.date)}: ${r.score} (${r.grade}) | ${r.breakdown.map((b) => `${b.label}=${b.score}`).join(", ")}`)
-  );
-  if (s) {
-    lines.push("");
-    lines.push("Evidências medidas no navegador:");
-    lines.push(
-      `HTTPS=${s.https}, contexto seguro=${s.secureContext}, HSTS=${s.hsts}, CSP=${s.csp}, X-Frame-Options=${s.xfo}, X-Content-Type-Options=${s.xcto}, Referrer-Policy=${s.referrerPolicy}, Permissions-Policy=${s.permPolicy}`
-    );
-    lines.push(
-      `Cookies habilitados=${s.cookiesEnabled}, cookies de terceiros=${s.thirdPartyCookies}, DNT=${s.doNotTrack}, isolamento entre origens=${s.crossOriginIsolated}`
-    );
-    lines.push(
-      `Armazenamento usado=${s.storageUsagePct}%, persistente=${s.persistentStorage}, online=${s.online}`
-    );
-    lines.push(
-      `Permissões concedidas=${s.permissionsGranted}/${s.permissionsTotal}: ${s.permissions
-        .filter((p) => p.state !== "unsupported")
-        .map((p) => `${p.name}:${p.state}`)
-        .join(", ")}`
-    );
-  }
-  return lines.join("\n").slice(0, 8000);
-}
-
-async function getAiRecommendations(summary: string): Promise<string[] | null> {
-  try {
-    const { data, error } = await supabase.functions.invoke("security-recommendations", {
-      body: { summary },
-    });
-    if (error) return null;
-    const recs = (data as { recommendations?: string[] })?.recommendations;
-    return Array.isArray(recs) && recs.length > 0 ? recs : null;
-  } catch {
-    return null;
-  }
-}
-
 
 export async function generateScanReport(history: ScanRecord[]) {
   const records = history.slice(0, 5);
@@ -192,31 +149,7 @@ export async function generateScanReport(history: ScanRecord[]) {
       .forEach((p) => row(p.name, p.state));
   }
 
-  // AI recommendations
   y += 10;
-  heading("Recomendações de segurança (análise por IA)");
-  const aiRecs = await getAiRecommendations(buildAiSummary(records, signals));
-  if (!aiRecs) {
-    doc.setTextColor(90);
-    const fallback = doc.splitTextToSize(
-      "Não foi possível gerar as recomendações por IA neste momento. Tente novamente com conexão à internet.",
-      W - M * 2
-    );
-    ensure(fallback.length * 13);
-    doc.text(fallback, M, y);
-    y += fallback.length * 13;
-  } else {
-    aiRecs.forEach((rec, i) => {
-      const wrapped = doc.splitTextToSize(`${i + 1}. ${rec}`, W - M * 2 - 10);
-      ensure(wrapped.length * 13 + 6);
-      doc.setTextColor(30);
-      doc.text(wrapped, M + 6, y);
-      y += wrapped.length * 13 + 6;
-    });
-  }
-
-  y += 10;
-
   ensure(60);
   doc.setFontSize(8);
   doc.setTextColor(120);
