@@ -126,8 +126,8 @@ const Index = () => {
                 <h1 className="font-display font-bold text-xl text-white tracking-tight">
                   FreireNet
                 </h1>
-                <p className="text-xs text-white/60 font-medium tracking-wide">
-                  Scan Security
+                <p className="text-[10px] text-white/60 font-medium tracking-wide max-w-[180px] leading-snug">
+                  Inteligência em Segurança Digital na Palma da Sua Mão
                 </p>
               </div>
             </div>
