@@ -79,6 +79,17 @@ export function IntrusionDetection() {
   const overall = severityStyles[overallSeverity];
   const OverallIcon = overall.icon;
 
+  // ---- Score de intrusão (0-100) ----
+  // Cada verificação vale igualmente: OK = 100%, Atenção = 55%, Risco = 0%.
+  const total = checks.length;
+  const safeCount = total - dangerCount - warnCount;
+  const score = total === 0 ? 100 : Math.round(((safeCount * 100 + warnCount * 55) / total));
+  const scoreLabel =
+    score >= 85 ? "Protegido" : score >= 60 ? "Atenção" : score >= 35 ? "Risco elevado" : "Crítico";
+  const scoreTone: Severity = score >= 85 ? "safe" : score >= 60 ? "warn" : "danger";
+  const scoreStyle = severityStyles[scoreTone];
+  const circumference = 2 * Math.PI * 52;
+
   return (
     <div className="space-y-4 pb-24">
       {/* Overall status */}
@@ -102,6 +113,53 @@ export function IntrusionDetection() {
           </Button>
         </div>
       </Card>
+
+      {/* Score de intrusão */}
+      <Card className="p-6">
+        <div className="flex items-center gap-6">
+          <div className="relative w-32 h-32 shrink-0">
+            <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+              <circle cx="60" cy="60" r="52" fill="none" strokeWidth="10" className="stroke-muted" />
+              <motion.circle
+                cx="60"
+                cy="60"
+                r="52"
+                fill="none"
+                strokeWidth="10"
+                strokeLinecap="round"
+                className={`${scoreStyle.color} stroke-current`}
+                strokeDasharray={circumference}
+                initial={{ strokeDashoffset: circumference }}
+                animate={{ strokeDashoffset: circumference - (circumference * score) / 100 }}
+                transition={{ duration: 0.9, ease: "easeOut" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className={`text-3xl font-bold ${scoreStyle.color}`}>{score}</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">/ 100</span>
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Score de Intrusão</p>
+            <h3 className={`text-2xl font-bold ${scoreStyle.color}`}>{scoreLabel}</h3>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              Calculado a partir de {total} verificação(ões) reais feitas no navegador.
+            </p>
+            <div className="flex gap-2 mt-3 flex-wrap">
+              <Badge variant="outline" className="text-emerald-400 border-current">
+                {safeCount} OK
+              </Badge>
+              <Badge variant="outline" className="text-amber-400 border-current">
+                {warnCount} atenção
+              </Badge>
+              <Badge variant="outline" className="text-red-400 border-current">
+                {dangerCount} risco
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </Card>
+
 
       {/* Individual checks */}
       {checks.map((check, i) => {
