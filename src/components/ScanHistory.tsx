@@ -339,6 +339,26 @@ export function ScanHistory() {
         </div>
       </Card>
 
+      {/* PDF report */}
+      <Card className="p-4 bg-card border-border">
+        <div className="flex items-center gap-2 mb-1">
+          <FileDown className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">Relatório em PDF</h3>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">
+          Gera um documento com o resumo das últimas 5 análises e as evidências
+          medidas no navegador (cabeçalhos, permissões, cookies e armazenamento).
+        </p>
+        <Button onClick={handleExport} disabled={exporting} size="sm" className="gap-2 w-full">
+          {exporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <FileDown className="w-4 h-4" />
+          )}
+          {exporting ? "Gerando relatório..." : "Baixar relatório PDF"}
+        </Button>
+      </Card>
+
       {/* List */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
