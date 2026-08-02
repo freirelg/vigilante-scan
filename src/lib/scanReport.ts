@@ -192,7 +192,31 @@ export async function generateScanReport(history: ScanRecord[]) {
       .forEach((p) => row(p.name, p.state));
   }
 
+  // AI recommendations
   y += 10;
+  heading("Recomendações de segurança (análise por IA)");
+  const aiRecs = await getAiRecommendations(buildAiSummary(records, signals));
+  if (!aiRecs) {
+    doc.setTextColor(90);
+    const fallback = doc.splitTextToSize(
+      "Não foi possível gerar as recomendações por IA neste momento. Tente novamente com conexão à internet.",
+      W - M * 2
+    );
+    ensure(fallback.length * 13);
+    doc.text(fallback, M, y);
+    y += fallback.length * 13;
+  } else {
+    aiRecs.forEach((rec, i) => {
+      const wrapped = doc.splitTextToSize(`${i + 1}. ${rec}`, W - M * 2 - 10);
+      ensure(wrapped.length * 13 + 6);
+      doc.setTextColor(30);
+      doc.text(wrapped, M + 6, y);
+      y += wrapped.length * 13 + 6;
+    });
+  }
+
+  y += 10;
+
   ensure(60);
   doc.setFontSize(8);
   doc.setTextColor(120);
