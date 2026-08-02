@@ -63,7 +63,25 @@ export function ScanHistory() {
 
   const [code, setCode] = useState("");
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
+  const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await generateScanReport(getScanHistory());
+      toast({ title: "Relatório gerado", description: "PDF salvo no seu aparelho." });
+    } catch {
+      toast({
+        title: "Falha ao gerar relatório",
+        description: "Tente novamente em instantes.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
 
   const refresh = () => {
     const all = getScanHistory();
