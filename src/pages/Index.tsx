@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { IntrusionDetection } from "@/components/IntrusionDetection";
 import { DeviceOptimizer } from "@/components/DeviceOptimizer";
-import { PasswordAnalyzer } from "@/components/PasswordAnalyzer";
 import { NetworkSecurity } from "@/components/NetworkSecurity";
 import { VulnerabilityScore } from "@/components/VulnerabilityScore";
 import { ScanHistory } from "@/components/ScanHistory";
@@ -29,7 +28,6 @@ const Index = () => {
   const premiumLabel: Record<string, string> = {
     intrusion: "Detecção de Intrusão",
     optimize: "Otimização do Dispositivo",
-    password: "Análise avançada de Senhas",
     network: "Segurança de Rede avançada",
   };
 
@@ -46,8 +44,6 @@ const Index = () => {
         return <IntrusionDetection />;
       case "optimize":
         return <DeviceOptimizer />;
-      case "password":
-        return <PasswordAnalyzer />;
       case "network":
         return <NetworkSecurity />;
       case "history":
@@ -67,8 +63,6 @@ const Index = () => {
         return "Detecção de Intrusão";
       case "optimize":
         return "Otimização";
-      case "password":
-        return "Analisador de Senhas";
       case "network":
         return "Segurança de Rede";
       case "history":
