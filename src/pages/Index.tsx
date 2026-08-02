@@ -11,6 +11,7 @@ import { ScanHistory } from "@/components/ScanHistory";
 import { BottomNav } from "@/components/BottomNav";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { InstallBanner } from "@/components/InstallBanner";
+import { UpdatePrompt } from "@/components/UpdatePrompt";
 import { SplashScreen } from "@/components/SplashScreen";
 import { HeaderStatus } from "@/components/HeaderStatus";
 import { UpgradeBlock } from "@/components/UpgradeBlock";
@@ -164,6 +165,8 @@ const Index = () => {
         {/* Bottom Navigation */}
         <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
         <InstallBanner />
+        <UpdatePrompt />
+
       </div>
     </>
   );

@@ -17,7 +17,12 @@ export function UpdatePrompt() {
     lastCheck: null,
   });
 
-  useEffect(() => subscribePwaUpdate(setState), []);
+  useEffect(() => {
+    const unsub = subscribePwaUpdate(setState);
+    return () => {
+      unsub();
+    };
+  }, []);
 
   return (
     <AnimatePresence>
