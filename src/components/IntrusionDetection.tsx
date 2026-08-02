@@ -79,6 +79,17 @@ export function IntrusionDetection() {
   const overall = severityStyles[overallSeverity];
   const OverallIcon = overall.icon;
 
+  // ---- Score de intrusão (0-100) ----
+  // Cada verificação vale igualmente: OK = 100%, Atenção = 55%, Risco = 0%.
+  const total = checks.length;
+  const safeCount = total - dangerCount - warnCount;
+  const score = total === 0 ? 100 : Math.round(((safeCount * 100 + warnCount * 55) / total));
+  const scoreLabel =
+    score >= 85 ? "Protegido" : score >= 60 ? "Atenção" : score >= 35 ? "Risco elevado" : "Crítico";
+  const scoreTone: Severity = score >= 85 ? "safe" : score >= 60 ? "warn" : "danger";
+  const scoreStyle = severityStyles[scoreTone];
+  const circumference = 2 * Math.PI * 52;
+
   return (
     <div className="space-y-4 pb-24">
       {/* Overall status */}
