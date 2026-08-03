@@ -105,6 +105,48 @@ export function IntrusionDetection() {
   const scoreStyle = severityStyles[scoreTone];
   const circumference = 2 * Math.PI * 52;
 
+  // ---- Recomendações práticas por verificação problemática ----
+  const actionsByCheck: Record<string, string[]> = {
+    "dom-injection": [
+      "Abra as extensões do navegador e desative as que você não reconhece.",
+      "Teste o app em uma janela anônima (extensões desligadas) e rode o scan de novo.",
+    ],
+    clipper: [
+      "Pare agora de copiar e colar chaves Pix, senhas ou endereços de carteira.",
+      "Sempre confira, caractere por caractere, o que foi colado antes de confirmar.",
+      "Remova extensões recentes e rode um antivírus tradicional no aparelho.",
+    ],
+    "ip-divergence": [
+      "Desligue VPNs, proxies ou DNS alternativos que você não configurou.",
+      "Se estiver em Wi-Fi público, troque para os dados móveis e refaça o teste.",
+    ],
+    "rogue-sw": [
+      "Nas configurações do navegador, limpe os dados dos sites desconhecidos listados.",
+      "Depois de limpar, feche todas as abas do site e rode o scan novamente.",
+    ],
+    "push-perm": [
+      "Revogue a permissão de notificações dos sites que você não usa.",
+      "Nunca aceite 'Permitir notificações' em sites de download ou streaming pirata.",
+    ],
+    fingerprint: [
+      "Se você não trocou de aparelho ou navegador, encerre as sessões abertas nas suas contas principais.",
+      "Troque as senhas críticas e ative verificação em duas etapas.",
+      "Se a mudança foi esperada, use 'Recapturar baseline' abaixo.",
+    ],
+    behavior: [
+      "Feche abas suspeitas e evite digitar senhas até o alerta sumir.",
+      "Confirme que a página é a oficial (endereço e cadeado) antes de qualquer login.",
+      "Use 'Reiniciar estatísticas' após limpar o ambiente e rode o scan de novo.",
+    ],
+  };
+
+  const problemChecks = checks
+    .filter((c) => c.severity !== "safe")
+    .sort((a, b) => (a.severity === "danger" ? -1 : 1) - (b.severity === "danger" ? -1 : 1));
+
+  const showAlert = problemChecks.length > 0;
+
+
   return (
     <div className="space-y-4 pb-24">
       {/* Overall status */}
