@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldAlert, ShieldCheck, AlertTriangle, RefreshCw, Clipboard, Activity, Fingerprint, RotateCcw } from "lucide-react";
+import { ShieldAlert, ShieldCheck, AlertTriangle, RefreshCw, Clipboard, Activity, Fingerprint, RotateCcw, Siren } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,11 +38,26 @@ export function IntrusionDetection() {
         runPackageBScan(),
         runPackageCScan(),
       ]);
-      setChecks([...pkgA, ...pkgB, ...pkgC]);
+      const all = [...pkgA, ...pkgB, ...pkgC];
+      setChecks(all);
+
+      const d = all.filter((c) => c.severity === "danger").length;
+      const w = all.filter((c) => c.severity === "warn").length;
+      const s = all.length === 0 ? 100 : Math.round(((all.length - d - w) * 100 + w * 55) / all.length);
+      if (s < 60) {
+        toast.error(`Score de Intrusão ${s}/100 — risco detectado`, {
+          description: "Veja as ações recomendadas abaixo e execute na ordem.",
+        });
+      } else if (s < 85) {
+        toast.warning(`Score de Intrusão ${s}/100 — atenção`, {
+          description: "Existem alertas para revisar.",
+        });
+      }
     } finally {
       setScanning(false);
     }
   };
+
 
   useEffect(() => {
     startBehaviorMonitor();
@@ -89,6 +104,48 @@ export function IntrusionDetection() {
   const scoreTone: Severity = score >= 85 ? "safe" : score >= 60 ? "warn" : "danger";
   const scoreStyle = severityStyles[scoreTone];
   const circumference = 2 * Math.PI * 52;
+
+  // ---- Recomendações práticas por verificação problemática ----
+  const actionsByCheck: Record<string, string[]> = {
+    "dom-injection": [
+      "Abra as extensões do navegador e desative as que você não reconhece.",
+      "Teste o app em uma janela anônima (extensões desligadas) e rode o scan de novo.",
+    ],
+    clipper: [
+      "Pare agora de copiar e colar chaves Pix, senhas ou endereços de carteira.",
+      "Sempre confira, caractere por caractere, o que foi colado antes de confirmar.",
+      "Remova extensões recentes e rode um antivírus tradicional no aparelho.",
+    ],
+    "ip-divergence": [
+      "Desligue VPNs, proxies ou DNS alternativos que você não configurou.",
+      "Se estiver em Wi-Fi público, troque para os dados móveis e refaça o teste.",
+    ],
+    "rogue-sw": [
+      "Nas configurações do navegador, limpe os dados dos sites desconhecidos listados.",
+      "Depois de limpar, feche todas as abas do site e rode o scan novamente.",
+    ],
+    "push-perm": [
+      "Revogue a permissão de notificações dos sites que você não usa.",
+      "Nunca aceite 'Permitir notificações' em sites de download ou streaming pirata.",
+    ],
+    fingerprint: [
+      "Se você não trocou de aparelho ou navegador, encerre as sessões abertas nas suas contas principais.",
+      "Troque as senhas críticas e ative verificação em duas etapas.",
+      "Se a mudança foi esperada, use 'Recapturar baseline' abaixo.",
+    ],
+    behavior: [
+      "Feche abas suspeitas e evite digitar senhas até o alerta sumir.",
+      "Confirme que a página é a oficial (endereço e cadeado) antes de qualquer login.",
+      "Use 'Reiniciar estatísticas' após limpar o ambiente e rode o scan de novo.",
+    ],
+  };
+
+  const problemChecks = checks
+    .filter((c) => c.severity !== "safe")
+    .sort((a, b) => (a.severity === "danger" ? -1 : 1) - (b.severity === "danger" ? -1 : 1));
+
+  const showAlert = problemChecks.length > 0;
+
 
   return (
     <div className="space-y-4 pb-24">
@@ -159,6 +216,69 @@ export function IntrusionDetection() {
           </div>
         </div>
       </Card>
+
+      {/* Alerta + recomendações práticas */}
+      {showAlert && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          <Card
+            className={`p-5 border-2 ${
+              dangerCount > 0 ? severityStyles.danger.bg : severityStyles.warn.bg
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <Siren
+                className={`w-6 h-6 shrink-0 ${
+                  dangerCount > 0 ? severityStyles.danger.color : severityStyles.warn.color
+                }`}
+              />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold">
+                  {dangerCount > 0 ? "Alerta de risco — aja agora" : "Atenção — revise estes pontos"}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Score {score}/100 ({scoreLabel}). Faça as ações abaixo na ordem apresentada.
+                </p>
+
+                <div className="mt-4 space-y-3">
+                  {problemChecks.map((c) => (
+                    <div
+                      key={`rec-${c.id}`}
+                      className="p-3 rounded-lg bg-background/40 border border-border/50"
+                    >
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold">{c.title}</span>
+                        <Badge
+                          variant="outline"
+                          className={`${severityStyles[c.severity].color} border-current`}
+                        >
+                          {severityStyles[c.severity].label}
+                        </Badge>
+                      </div>
+                      <ul className="mt-2 space-y-1.5">
+                        {(actionsByCheck[c.id] ?? [
+                          "Revise a evidência desta verificação abaixo e refaça o scan.",
+                        ]).map((a, idx) => (
+                          <li key={idx} className="flex gap-2 text-xs text-muted-foreground leading-relaxed">
+                            <span className="text-primary font-bold shrink-0">{idx + 1}.</span>
+                            <span>{a}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+
+                <Button size="sm" className="mt-4" onClick={runScan} disabled={scanning}>
+                  <RefreshCw className={`w-4 h-4 mr-2 ${scanning ? "animate-spin" : ""}`} />
+                  Refazer verificação
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
+
 
 
       {/* Individual checks */}
