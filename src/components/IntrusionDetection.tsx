@@ -217,6 +217,69 @@ export function IntrusionDetection() {
         </div>
       </Card>
 
+      {/* Alerta + recomendações práticas */}
+      {showAlert && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          <Card
+            className={`p-5 border-2 ${
+              dangerCount > 0 ? severityStyles.danger.bg : severityStyles.warn.bg
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <Siren
+                className={`w-6 h-6 shrink-0 ${
+                  dangerCount > 0 ? severityStyles.danger.color : severityStyles.warn.color
+                }`}
+              />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold">
+                  {dangerCount > 0 ? "Alerta de risco — aja agora" : "Atenção — revise estes pontos"}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Score {score}/100 ({scoreLabel}). Faça as ações abaixo na ordem apresentada.
+                </p>
+
+                <div className="mt-4 space-y-3">
+                  {problemChecks.map((c) => (
+                    <div
+                      key={`rec-${c.id}`}
+                      className="p-3 rounded-lg bg-background/40 border border-border/50"
+                    >
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold">{c.title}</span>
+                        <Badge
+                          variant="outline"
+                          className={`${severityStyles[c.severity].color} border-current`}
+                        >
+                          {severityStyles[c.severity].label}
+                        </Badge>
+                      </div>
+                      <ul className="mt-2 space-y-1.5">
+                        {(actionsByCheck[c.id] ?? [
+                          "Revise a evidência desta verificação abaixo e refaça o scan.",
+                        ]).map((a, idx) => (
+                          <li key={idx} className="flex gap-2 text-xs text-muted-foreground leading-relaxed">
+                            <span className="text-primary font-bold shrink-0">{idx + 1}.</span>
+                            <span>{a}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+
+                <Button size="sm" className="mt-4" onClick={runScan} disabled={scanning}>
+                  <RefreshCw className={`w-4 h-4 mr-2 ${scanning ? "animate-spin" : ""}`} />
+                  Refazer verificação
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
+
+
 
       {/* Individual checks */}
       {checks.map((check, i) => {
