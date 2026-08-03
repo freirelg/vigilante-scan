@@ -38,11 +38,26 @@ export function IntrusionDetection() {
         runPackageBScan(),
         runPackageCScan(),
       ]);
-      setChecks([...pkgA, ...pkgB, ...pkgC]);
+      const all = [...pkgA, ...pkgB, ...pkgC];
+      setChecks(all);
+
+      const d = all.filter((c) => c.severity === "danger").length;
+      const w = all.filter((c) => c.severity === "warn").length;
+      const s = all.length === 0 ? 100 : Math.round(((all.length - d - w) * 100 + w * 55) / all.length);
+      if (s < 60) {
+        toast.error(`Score de Intrusão ${s}/100 — risco detectado`, {
+          description: "Veja as ações recomendadas abaixo e execute na ordem.",
+        });
+      } else if (s < 85) {
+        toast.warning(`Score de Intrusão ${s}/100 — atenção`, {
+          description: "Existem alertas para revisar.",
+        });
+      }
     } finally {
       setScanning(false);
     }
   };
+
 
   useEffect(() => {
     startBehaviorMonitor();
