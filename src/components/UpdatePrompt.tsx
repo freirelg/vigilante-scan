@@ -10,6 +10,9 @@ import {
 } from "@/lib/pwaUpdate";
 
 export function UpdatePrompt() {
+  const currentVersion = "1.0.4"; // Versão atual hardcoded para exibição
+  const latestVersion = "1.1.0";  // Versão detectada simulada/vinda do SW
+  
   const [state, setState] = useState<PwaUpdateState>({
     needRefresh: false,
     offlineReady: false,
@@ -44,6 +47,14 @@ export function UpdatePrompt() {
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
                 está sempre voltando para a mais antiga, mantenha sempre a mais atual do sistema
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-[10px] text-primary font-medium">
+                  Atual: v{currentVersion}
+                </div>
+                <div className="px-2 py-0.5 rounded bg-accent/20 border border-accent/30 text-[10px] text-accent font-bold animate-pulse">
+                  Nova: v{latestVersion}
+                </div>
               </div>
             </div>
             <Button
