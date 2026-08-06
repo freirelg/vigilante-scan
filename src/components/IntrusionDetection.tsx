@@ -79,16 +79,44 @@ export function IntrusionDetection() {
   const overall = severityStyles[overallSeverity];
   const OverallIcon = overall.icon;
 
+  const calculateScore = () => {
+    if (checks.length === 0) return 100;
+    const penaltyPerDanger = 35;
+    const penaltyPerWarn = 15;
+    const score = 100 - (dangerCount * penaltyPerDanger + warnCount * penaltyPerWarn);
+    return Math.max(0, score);
+  };
+
+  const intrusionScore = calculateScore();
+
   return (
     <div className="space-y-4 pb-24">
-      {/* Overall status */}
-      <Card className={`p-6 border-2 ${overall.bg}`}>
-        <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-2xl ${overall.bg}`}>
-            <OverallIcon className={`w-8 h-8 ${overall.color}`} />
+      {/* Overall status with Score */}
+      <Card className={`p-6 border-2 ${overall.bg} relative overflow-hidden`}>
+        {/* Animated background pulse for score */}
+        <motion.div 
+          className={`absolute inset-0 opacity-5 ${overall.bg}`}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        />
+        
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="relative">
+            <div className={`p-4 rounded-full border-4 ${overall.bg} flex items-center justify-center w-20 h-20`}>
+              <span className={`text-2xl font-black ${overall.color}`}>{intrusionScore}</span>
+            </div>
+            <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-1 border border-border">
+              <OverallIcon className={`w-5 h-5 ${overall.color}`} />
+            </div>
           </div>
+          
           <div className="flex-1">
-            <h2 className="text-xl font-bold">Detecção de Intrusão</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold">Detecção de Intrusão</h2>
+              <Badge variant="secondary" className="text-[10px] uppercase tracking-tighter">
+                Score Real
+              </Badge>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
               {overallSeverity === "danger"
                 ? `${dangerCount} sinal(is) crítico(s) detectado(s).`
@@ -97,7 +125,7 @@ export function IntrusionDetection() {
                 : "Nenhum sinal de comprometimento detectado."}
             </p>
           </div>
-          <Button size="sm" variant="outline" onClick={runScan} disabled={scanning}>
+          <Button size="icon" variant="outline" onClick={runScan} disabled={scanning} className="rounded-xl">
             <RefreshCw className={`w-4 h-4 ${scanning ? "animate-spin" : ""}`} />
           </Button>
         </div>
