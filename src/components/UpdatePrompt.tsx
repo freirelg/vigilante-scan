@@ -39,11 +39,11 @@ export function UpdatePrompt() {
               <Sparkles className="w-5 h-5 text-accent" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-foreground">
-                Nova versão disponível
+              <div className="text-sm font-semibold text-foreground leading-tight">
+                o sistema não está carregando a versão mais recente
               </div>
-              <div className="text-xs text-muted-foreground">
-                Atualize para receber as melhorias mais recentes.
+              <div className="text-xs text-muted-foreground mt-0.5">
+                está sempre voltando para a mais antiga, mantenha sempre a mais atual do sistema
               </div>
             </div>
             <Button
