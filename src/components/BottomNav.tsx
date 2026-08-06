@@ -8,7 +8,7 @@ interface BottomNavProps {
 }
 
 const tabs = [
-  { id: "score", label: "Score", icon: Gauge },
+  { id: "score", label: "Análise", icon: Gauge },
   { id: "intrusion", label: "Intrusão", icon: ShieldAlert },
   { id: "optimize", label: "Otimizar", icon: Zap },
   { id: "password", label: "Senhas", icon: Lock },
