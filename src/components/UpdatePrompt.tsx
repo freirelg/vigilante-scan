@@ -42,11 +42,9 @@ export function UpdatePrompt() {
               <Sparkles className="w-5 h-5 text-accent" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-foreground leading-tight">
-                o sistema não está carregando a versão mais recente
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                está sempre voltando para a mais antiga, mantenha sempre a mais atual do sistema
+              <div className="text-xs font-semibold text-foreground leading-tight whitespace-pre-line">
+                Você é o desenvolvedor oficial deste projeto.{"\n\n"}
+                A partir de agora, toda modificação, correção, melhoria ou nova funcionalidade deve ser aplicada sempre sobre a versão mais recente do projeto, nunca recriando ou retornando para versões anteriores.
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <div className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-[10px] text-primary font-medium">
