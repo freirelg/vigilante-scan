@@ -24,6 +24,13 @@ import {
   
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import { LiveTrafficChart } from "@/components/LiveTrafficChart";
 import {
   checkDoH,
@@ -50,6 +57,7 @@ interface NetworkCheck {
   details?: string;
   data?: string[];
   recommendation?: string;
+  helpText?: string;
 }
 
 // Detecta IPs locais e públicos via WebRTC (real)
@@ -148,6 +156,7 @@ export function NetworkSecurity() {
         description: "Detectando exposição via RTCPeerConnection",
         icon: <Radio className="w-5 h-5" />,
         status: "running",
+        helpText: "WebRTC permite chamadas de vídeo no navegador, mas pode vazar seu IP real mesmo usando VPN.",
       },
       {
         id: "localip",
@@ -176,6 +185,7 @@ export function NetworkSecurity() {
         description: "Testando resolvedores DNS criptografados",
         icon: <ShieldCheck className="w-5 h-5" />,
         status: "running",
+        helpText: "DoH protege seu histórico de navegação contra espionagem do provedor de internet.",
       },
       {
         id: "mixed",
@@ -211,6 +221,7 @@ export function NetworkSecurity() {
         description: "Consultando lista pública de domínios HTTPS obrigatório",
         icon: <ListChecks className="w-5 h-5" />,
         status: "running",
+        helpText: "HSTS garante que seu navegador nunca use uma conexão insegura (HTTP) com este site.",
       },
       {
         id: "captive",
