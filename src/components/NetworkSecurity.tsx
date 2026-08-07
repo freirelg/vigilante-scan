@@ -745,22 +745,20 @@ export function NetworkSecurity() {
 
   return (
     <div className="space-y-6">
-      {/* Header Card with Veredito (Item 2) */}
+      {/* Connection Map (Melhoria 5) */}
       <motion.div
-        className="glass-card p-6"
+        className="glass-card p-6 overflow-hidden relative"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-xl gradient-primary glow-primary">
-              <Wifi className="w-6 h-6 text-primary-foreground" />
+              <Network className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Análise de Rede</h3>
-              <p className="text-sm text-muted-foreground">
-                Privacidade e Integridade
-              </p>
+              <h3 className="font-semibold text-foreground">Mapa de Conexão</h3>
+              <p className="text-sm text-muted-foreground">Estrutura e integridade da rota</p>
             </div>
           </div>
           {scanned && (
@@ -769,6 +767,81 @@ export function NetworkSecurity() {
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Score de Rede</div>
             </div>
           )}
+        </div>
+
+        <div className="relative flex items-center justify-between px-2 mb-10 mt-4">
+          {/* Device */}
+          <div className="flex flex-col items-center gap-2 z-10">
+            <div className={`p-4 rounded-full border-2 transition-colors ${
+              isScanning ? "border-primary animate-pulse" : 
+              scanned ? (checks.some(c => ["localip", "quality"].includes(c.id) && c.status === "danger") ? "border-destructive bg-destructive/10" : "border-success bg-success/10") : 
+              "border-border bg-secondary/30"
+            }`}>
+              <Smartphone className={`w-6 h-6 ${
+                scanned && checks.some(c => ["localip", "quality"].includes(c.id) && c.status === "danger") ? "text-destructive" : 
+                scanned ? "text-success" : "text-muted-foreground"
+              }`} />
+            </div>
+            <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter">Dispositivo</span>
+          </div>
+
+          {/* Line 1 */}
+          <div className="flex-1 h-[2px] mx-2 relative bg-border overflow-hidden">
+            {(isScanning || scanned) && (
+              <motion.div 
+                className={`absolute inset-0 ${
+                  scanned && checks.some(c => ["https", "doh", "dns"].includes(c.id) && c.status === "danger") ? "bg-destructive" : "bg-primary"
+                }`}
+                initial={{ x: "-100%" }}
+                animate={{ x: isScanning ? ["-100%", "100%"] : "0%" }}
+                transition={isScanning ? { repeat: Infinity, duration: 1.5, ease: "linear" } : { duration: 0.5 }}
+              />
+            )}
+          </div>
+
+          {/* DNS / Server */}
+          <div className="flex flex-col items-center gap-2 z-10">
+            <div className={`p-4 rounded-full border-2 transition-colors ${
+              isScanning ? "border-primary animate-pulse" : 
+              scanned ? (checks.some(c => ["doh", "dns"].includes(c.id) && c.status === "danger") ? "border-destructive bg-destructive/10" : "border-success bg-success/10") : 
+              "border-border bg-secondary/30"
+            }`}>
+              <Server className={`w-6 h-6 ${
+                scanned && checks.some(c => ["doh", "dns"].includes(c.id) && c.status === "danger") ? "text-destructive" : 
+                scanned ? "text-success" : "text-muted-foreground"
+              }`} />
+            </div>
+            <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter">DNS/Provedor</span>
+          </div>
+
+          {/* Line 2 */}
+          <div className="flex-1 h-[2px] mx-2 relative bg-border overflow-hidden">
+            {(isScanning || scanned) && (
+              <motion.div 
+                className={`absolute inset-0 ${
+                  scanned && checks.some(c => ["webrtc", "publicip", "geoip"].includes(c.id) && c.status === "danger") ? "bg-destructive" : "bg-primary"
+                }`}
+                initial={{ x: "-100%" }}
+                animate={{ x: isScanning ? ["-100%", "100%"] : "0%" }}
+                transition={isScanning ? { repeat: Infinity, duration: 1.5, ease: "linear", delay: 0.75 } : { duration: 0.5 }}
+              />
+            )}
+          </div>
+
+          {/* Internet */}
+          <div className="flex flex-col items-center gap-2 z-10">
+            <div className={`p-4 rounded-full border-2 transition-colors ${
+              isScanning ? "border-primary animate-pulse" : 
+              scanned ? (checks.some(c => ["webrtc", "publicip", "geoip"].includes(c.id) && c.status === "danger") ? "border-destructive bg-destructive/10" : "border-success bg-success/10") : 
+              "border-border bg-secondary/30"
+            }`}>
+              <Globe className={`w-6 h-6 ${
+                scanned && checks.some(c => ["webrtc", "publicip", "geoip"].includes(c.id) && c.status === "danger") ? "text-destructive" : 
+                scanned ? "text-success" : "text-muted-foreground"
+              }`} />
+            </div>
+            <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter">Internet</span>
+          </div>
         </div>
 
         {scanned && (
