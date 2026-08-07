@@ -30,7 +30,7 @@ interface AuditedPassword {
   checking: boolean;
 }
 
-const analyzePasswordStrength = (password: string) => {
+const analyzePasswordStrength = (password: string, serviceName: string = "") => {
   const checks: PasswordCheck[] = [
     { label: "Mínimo 8 caracteres", passed: password.length >= 8, suggestion: "Use pelo menos 12 caracteres" },
     { label: "Letra maiúscula", passed: /[A-Z]/.test(password), suggestion: "Inclua uma letra maiúscula (A-Z)" },
@@ -39,8 +39,23 @@ const analyzePasswordStrength = (password: string) => {
     { label: "Caractere especial", passed: /[!@#$%^&*(),.?":{}|<>]/.test(password), suggestion: "Use símbolos como !@#$%&*" },
     { label: "Sem sequências comuns", passed: !/(123|abc|qwerty|password|senha|admin)/i.test(password), suggestion: "Evite palavras/sequências óbvias" },
   ];
+
+  // Adicionar verificação de dados pessoais no nome do serviço (se houver)
+  if (serviceName && serviceName.length > 2) {
+    const serviceParts = serviceName.toLowerCase().split(/[\s_-]+/);
+    const containsServiceInfo = serviceParts.some(part => part.length > 2 && password.toLowerCase().includes(part));
+    if (containsServiceInfo) {
+      checks.push({ 
+        label: "Sem dados do serviço na senha", 
+        passed: false, 
+        suggestion: "Não inclua o nome do serviço na senha" 
+      });
+    }
+  }
+
   const passed = checks.filter((c) => c.passed).length;
-  const strength = (passed / checks.length) * 100;
+  const total = checks.length;
+  const strength = (passed / total) * 100;
   const issues = checks.filter((c) => !c.passed).map((c) => c.label);
   const suggestions = checks.filter((c) => !c.passed && c.suggestion).map((c) => c.suggestion!);
   return { checks, strength, issues, suggestions };
