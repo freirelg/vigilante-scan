@@ -155,122 +155,122 @@ export function NetworkSecurity() {
     return "integrity";
   };
 
+  const initialChecks: NetworkCheck[] = useMemo(() => [
+    {
+      id: "https",
+      title: "Conexão HTTPS",
+      description: "Garante que os dados entre você e o site sejam secretos e ilegíveis para hackers.",
+      icon: <Lock className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "webrtc",
+      title: "Vazamento WebRTC",
+      description: "Evita que seu endereço real seja descoberto por sites maliciosos, mesmo usando VPN.",
+      icon: <Radio className="w-5 h-5" />,
+      status: "idle",
+      helpText: "WebRTC permite chamadas de vídeo no navegador, mas pode vazar seu IP real mesmo usando VPN.",
+    },
+    {
+      id: "localip",
+      title: "Exposição de IP Local",
+      description: "Protege a identidade interna do seu dispositivo na rede doméstica ou empresarial.",
+      icon: <Eye className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "publicip",
+      title: "IP Público",
+      description: "Monitora como o mundo enxerga sua conexão na internet.",
+      icon: <Globe className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "dns",
+      title: "Integridade de Dados",
+      description: "Verifica se as informações que você envia não estão sendo alteradas no caminho.",
+      icon: <Server className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "doh",
+      title: "DNS Seguro (DoH)",
+      description: "Impede que seu provedor de internet rastreie quais sites você visita.",
+      icon: <ShieldCheck className="w-5 h-5" />,
+      status: "idle",
+      helpText: "DoH protege seu histórico de navegação contra espionagem do provedor de internet.",
+    },
+    {
+      id: "mixed",
+      title: "Conteúdo Inseguro",
+      description: "Detecta se elementos perigosos sem criptografia estão tentando rodar nesta página.",
+      icon: <FileWarning className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "tls",
+      title: "Modernidade da Conexão",
+      description: "Analisa se você está usando a tecnologia de comunicação mais rápida e segura disponível.",
+      icon: <Server className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "latency",
+      title: "Estabilidade do Sinal",
+      description: "Mede o atraso e a consistência da sua conexão para evitar quedas bruscas.",
+      icon: <Radio className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "geoip",
+      title: "Rastreio de Localização",
+      description: "Compara onde você parece estar com onde você realmente está para detectar espionagem.",
+      icon: <MapPin className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "hsts",
+      title: "Forçar Criptografia",
+      description: "Garante que o navegador nunca aceite uma conexão insegura com este serviço.",
+      icon: <ListChecks className="w-5 h-5" />,
+      status: "idle",
+      helpText: "HSTS garante que seu navegador nunca use uma conexão insegura (HTTP) com este site.",
+    },
+    {
+      id: "captive",
+      title: "Redes Públicas (Wi-Fi)",
+      description: "Detecta se um Wi-Fi público está tentando interceptar sua navegação para roubar dados.",
+      icon: <WifiIcon className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "headers",
+      title: "Blindagem do Navegador",
+      description: "Verifica as instruções de segurança que o site envia para proteger seu acesso.",
+      icon: <ShieldQuestion className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "quality",
+      title: "Qualidade da Rede",
+      description: "Avalia a velocidade real e a tecnologia de conexão (4G, 5G ou Wi-Fi) atual.",
+      icon: <Gauge className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "ports",
+      title: "Barreira de Fogo (Firewall)",
+      description: "Testa se as portas de entrada estão protegidas contra invasões externas.",
+      icon: <Network className="w-5 h-5" />,
+      status: "idle",
+    },
+  ], []);
+
   const runFullScan = async () => {
     setIsScanning(true);
     setScanned(false);
 
-    const initialChecks: NetworkCheck[] = [
-      {
-        id: "https",
-        title: "Conexão HTTPS",
-        description: "Garante que os dados entre você e o site sejam secretos e ilegíveis para hackers.",
-        icon: <Lock className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "webrtc",
-        title: "Vazamento WebRTC",
-        description: "Evita que seu endereço real seja descoberto por sites maliciosos, mesmo usando VPN.",
-        icon: <Radio className="w-5 h-5" />,
-        status: "running",
-        helpText: "WebRTC permite chamadas de vídeo no navegador, mas pode vazar seu IP real mesmo usando VPN.",
-      },
-      {
-        id: "localip",
-        title: "Exposição de IP Local",
-        description: "Protege a identidade interna do seu dispositivo na rede doméstica ou empresarial.",
-        icon: <Eye className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "publicip",
-        title: "IP Público",
-        description: "Monitora como o mundo enxerga sua conexão na internet.",
-        icon: <Globe className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "dns",
-        title: "Integridade de Dados",
-        description: "Verifica se as informações que você envia não estão sendo alteradas no caminho.",
-        icon: <Server className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "doh",
-        title: "DNS Seguro (DoH)",
-        description: "Impede que seu provedor de internet rastreie quais sites você visita.",
-        icon: <ShieldCheck className="w-5 h-5" />,
-        status: "running",
-        helpText: "DoH protege seu histórico de navegação contra espionagem do provedor de internet.",
-      },
-      {
-        id: "mixed",
-        title: "Conteúdo Inseguro",
-        description: "Detecta se elementos perigosos sem criptografia estão tentando rodar nesta página.",
-        icon: <FileWarning className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "tls",
-        title: "Modernidade da Conexão",
-        description: "Analisa se você está usando a tecnologia de comunicação mais rápida e segura disponível.",
-        icon: <Server className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "latency",
-        title: "Estabilidade do Sinal",
-        description: "Mede o atraso e a consistência da sua conexão para evitar quedas bruscas.",
-        icon: <Radio className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "geoip",
-        title: "Rastreio de Localização",
-        description: "Compara onde você parece estar com onde você realmente está para detectar espionagem.",
-        icon: <MapPin className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "hsts",
-        title: "Forçar Criptografia",
-        description: "Garante que o navegador nunca aceite uma conexão insegura com este serviço.",
-        icon: <ListChecks className="w-5 h-5" />,
-        status: "running",
-        helpText: "HSTS garante que seu navegador nunca use uma conexão insegura (HTTP) com este site.",
-      },
-      {
-        id: "captive",
-        title: "Redes Públicas (Wi-Fi)",
-        description: "Detecta se um Wi-Fi público está tentando interceptar sua navegação para roubar dados.",
-        icon: <WifiIcon className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "headers",
-        title: "Blindagem do Navegador",
-        description: "Verifica as instruções de segurança que o site envia para proteger seu acesso.",
-        icon: <ShieldQuestion className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "quality",
-        title: "Qualidade da Rede",
-        description: "Avalia a velocidade real e a tecnologia de conexão (4G, 5G ou Wi-Fi) atual.",
-        icon: <Gauge className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "ports",
-        title: "Barreira de Fogo (Firewall)",
-        description: "Testa se as portas de entrada estão protegidas contra invasões externas.",
-        icon: <Network className="w-5 h-5" />,
-        status: "running",
-      },
-    ];
-
-    setChecks(initialChecks);
+    setChecks(initialChecks.map(c => ({ ...c, status: "running" })));
 
     // 1. HTTPS check (real)
     await new Promise((r) => setTimeout(r, 600));
