@@ -102,6 +102,12 @@ export function PasswordAnalyzer() {
     setAdding(true);
     const analysis = analyzePasswordStrength(newPassword, newService);
     const id = crypto.randomUUID();
+    const isReused = audited.some(p => p.password === newPassword);
+    
+    if (isReused) {
+      analysis.suggestions.push("Esta senha já está sendo usada em outro serviço. Evite reutilização.");
+    }
+
     const entry: AuditedPassword = {
       id,
       service: newService.trim(),
@@ -112,6 +118,7 @@ export function PasswordAnalyzer() {
       pwned: false,
       pwnedCount: 0,
       checking: true,
+      reused: isReused,
     };
     setAudited((prev) => [entry, ...prev]);
     setNewService("");
@@ -125,7 +132,7 @@ export function PasswordAnalyzer() {
         )
       );
       if (result.pwned) {
-        toast.error(`Senha exposta em ${result.count.toLocaleString("pt-BR")} vazamentos!`);
+        toast.error(`Senha de ${newService} exposta em vazamentos!`);
       } else if (analysis.strength >= 80) {
         toast.success("Senha forte e não encontrada em vazamentos");
       }
