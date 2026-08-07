@@ -2,15 +2,15 @@
 export type Edition = "start" | "essencial" | "pro";
 
 export const EDITION: Edition = "start";
-export const START_SCAN_LIMIT = 10;
+export const START_SCAN_LIMIT = 30;
+export const INTERMEDIATE_SCAN_LIMIT = 50;
 
 const KEY_USED = "freirenet_start_scans_used_v1";
-const KEY_EXTRA = "freirenet_start_scans_extra_v1";
-const KEY_UNLOCKED = "freirenet_unlocked_v1";
+const KEY_LEVEL = "freirenet_access_level_v1"; // 0: 30 scans, 1: 50 scans, 2: Unlimited
 
 export const UNLOCK_CODES = {
-  extra10: "@FreireNet10@",
-  full: "@FreireNetLivre999@",
+  level50: "FreireNet50",
+  full: "FreireNetLivre999",
 } as const;
 
 export function getScansUsed(): number {
