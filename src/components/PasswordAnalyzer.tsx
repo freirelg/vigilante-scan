@@ -99,7 +99,7 @@ export function PasswordAnalyzer() {
       return;
     }
     setAdding(true);
-    const analysis = analyzePasswordStrength(newPassword);
+    const analysis = analyzePasswordStrength(newPassword, newService);
     const id = crypto.randomUUID();
     const entry: AuditedPassword = {
       id,
