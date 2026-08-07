@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { checkPasswordPwned } from "@/lib/hibp";
 import { PasswordRiskSummary } from "@/components/PasswordRiskSummary";
+import { getScanHistory } from "@/lib/scanHistory";
 
 
 interface PasswordCheck {
@@ -172,8 +173,42 @@ export function PasswordAnalyzer() {
   const customAnalysis = customPassword ? analyzePasswordStrength(customPassword) : null;
   const weakCount = audited.filter((p) => p.strength < 80 || p.pwned).length;
 
+  const history = getScanHistory();
+  const lastScan = history.length > 0 ? history[0] : null;
+
   return (
     <div className="space-y-6">
+      {/* Scan integration note */}
+      {lastScan && lastScan.score < 85 && (
+        <motion.div
+          className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <div className="p-2 bg-primary/20 rounded-lg">
+            <ShieldAlert className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">Aumente sua proteção</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Seu último score foi <span className="text-primary font-bold">{lastScan.score}/100</span>.
+              Auditar suas senhas ajuda a reduzir o risco de exposição.
+            </p>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-xs text-primary font-medium"
+            onClick={() => {
+              const el = document.getElementById('audit-section');
+              el?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            Começar
+          </Button>
+        </motion.div>
+      )}
+
       {/* Privacy note */}
       <motion.div
         className="glass-card p-4 flex items-start gap-3"
@@ -190,6 +225,7 @@ export function PasswordAnalyzer() {
 
       {/* Add password to audit */}
       <motion.div
+        id="audit-section"
         className="glass-card p-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -238,6 +274,35 @@ export function PasswordAnalyzer() {
         </div>
       </motion.div>
 
+
+      {/* Suggestions for improvement based on general context */}
+      {audited.length === 0 && (
+        <motion.div
+          className="glass-card p-6 border-dashed border-primary/30"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="flex items-center gap-3 mb-4 text-primary">
+            <Lightbulb className="w-5 h-5" />
+            <h3 className="font-semibold">Por onde começar?</h3>
+          </div>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              A auditoria de senhas ajuda a detectar reutilização e vazamentos reais sem que você precise digitar suas senhas principais aqui.
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              <div className="p-3 rounded-lg bg-secondary/50 text-xs flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-success mt-0.5" />
+                <span>Audite a senha do seu e-mail principal primeiro.</span>
+              </div>
+              <div className="p-3 rounded-lg bg-secondary/50 text-xs flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-success mt-0.5" />
+                <span>Verifique se contas de bancos possuem senhas únicas.</span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Risk summary (reuse + weakness) */}
       <PasswordRiskSummary entries={audited} />
