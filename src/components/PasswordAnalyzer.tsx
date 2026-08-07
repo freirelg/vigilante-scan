@@ -28,6 +28,7 @@ interface AuditedPassword {
   pwned: boolean;
   pwnedCount: number;
   checking: boolean;
+  reused?: boolean;
 }
 
 const analyzePasswordStrength = (password: string, serviceName: string = "") => {
