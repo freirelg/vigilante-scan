@@ -5,8 +5,8 @@ export const EDITION: Edition = "start";
 export const START_SCAN_LIMIT = 30;
 export const INTERMEDIATE_SCAN_LIMIT = 50;
 
-const KEY_USED = "freirenet_start_scans_used_v1";
-const KEY_LEVEL = "freirenet_access_level_v1"; // 0: 30 scans, 1: 50 scans, 2: Unlimited
+const KEY_USED = "freirenet_start_scans_used_v2";
+const KEY_LEVEL = "freirenet_access_level_v2"; // 0: 30 scans, 1: 50 scans, 2: Unlimited
 
 export const UNLOCK_CODES = {
   level50: "FreireNet50",
