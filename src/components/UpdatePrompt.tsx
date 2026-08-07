@@ -10,8 +10,8 @@ import {
 } from "@/lib/pwaUpdate";
 
 export function UpdatePrompt() {
-  const currentVersion = "1.0.4"; // Versão atual hardcoded para exibição
-  const latestVersion = "1.1.0";  // Versão detectada simulada/vinda do SW
+  const currentVersion = "1.0.4";
+  const latestVersion = "1.1.0";
   
   const [state, setState] = useState<PwaUpdateState>({
     needRefresh: false,
@@ -43,7 +43,7 @@ export function UpdatePrompt() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold text-foreground leading-tight">
-                Uma nova versão do sistema está disponível com melhorias de segurança.
+                Nova versão do sistema disponível. Mantenha seu Freirenet sempre atualizado para máxima proteção.
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <div className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-[10px] text-primary font-medium">
