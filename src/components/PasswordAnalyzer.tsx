@@ -410,7 +410,19 @@ export function PasswordAnalyzer() {
                             </div>
                             <p className="text-xs text-muted-foreground">
                               Esta senha aparece <strong className="text-destructive">{pw.pwnedCount.toLocaleString("pt-BR")}</strong> vezes
-                              em bases de dados públicas. Troque imediatamente.
+                              em bases de dados públicas. Troque imediatamente para proteger sua conta em <strong className="text-foreground">{pw.service}</strong>.
+                            </p>
+                          </div>
+                        )}
+
+                        {!pw.pwned && pw.strength < 60 && (
+                          <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <AlertTriangle className="w-4 h-4 text-warning" />
+                              <span className="text-sm font-semibold text-warning">Proteção Insuficiente</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Sua senha para <strong className="text-foreground">{pw.service}</strong> é fácil de ser descoberta por ataques de força bruta. Siga as recomendações abaixo.
                             </p>
                           </div>
                         )}
@@ -419,7 +431,7 @@ export function PasswordAnalyzer() {
                           <>
                             <div className="flex items-center gap-2">
                               <Lightbulb className="w-4 h-4 text-warning" />
-                              <span className="text-sm font-medium text-foreground">Sugestões de Correção</span>
+                              <span className="text-sm font-medium text-foreground">Recomendações para {pw.service}</span>
                             </div>
                             <ul className="space-y-2">
                               {pw.suggestions.map((s, i) => (
