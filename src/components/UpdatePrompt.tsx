@@ -10,8 +10,8 @@ import {
 } from "@/lib/pwaUpdate";
 
 export function UpdatePrompt() {
-  const currentVersion = "1.0.4"; // Versão atual hardcoded para exibição
-  const latestVersion = "1.1.0";  // Versão detectada simulada/vinda do SW
+  const currentVersion = "1.0.4";
+  const latestVersion = "1.1.0";
   
   const [state, setState] = useState<PwaUpdateState>({
     needRefresh: false,
@@ -42,9 +42,8 @@ export function UpdatePrompt() {
               <Sparkles className="w-5 h-5 text-accent" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold text-foreground leading-tight whitespace-pre-line">
-                Você é o desenvolvedor oficial deste projeto.{"\n\n"}
-                A partir de agora, toda modificação, correção, melhoria ou nova funcionalidade deve ser aplicada sempre sobre a versão mais recente do projeto, nunca recriando ou retornando para versões anteriores.
+              <div className="text-xs font-semibold text-foreground leading-tight">
+                Nova versão do sistema disponível. Mantenha seu Freirenet sempre atualizado para máxima proteção.
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <div className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-[10px] text-primary font-medium">
