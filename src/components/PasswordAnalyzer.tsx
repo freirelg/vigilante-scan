@@ -28,9 +28,10 @@ interface AuditedPassword {
   pwned: boolean;
   pwnedCount: number;
   checking: boolean;
+  reused?: boolean;
 }
 
-const analyzePasswordStrength = (password: string) => {
+const analyzePasswordStrength = (password: string, serviceName: string = "") => {
   const checks: PasswordCheck[] = [
     { label: "Mínimo 8 caracteres", passed: password.length >= 8, suggestion: "Use pelo menos 12 caracteres" },
     { label: "Letra maiúscula", passed: /[A-Z]/.test(password), suggestion: "Inclua uma letra maiúscula (A-Z)" },
@@ -39,8 +40,23 @@ const analyzePasswordStrength = (password: string) => {
     { label: "Caractere especial", passed: /[!@#$%^&*(),.?":{}|<>]/.test(password), suggestion: "Use símbolos como !@#$%&*" },
     { label: "Sem sequências comuns", passed: !/(123|abc|qwerty|password|senha|admin)/i.test(password), suggestion: "Evite palavras/sequências óbvias" },
   ];
+
+  // Adicionar verificação de dados pessoais no nome do serviço (se houver)
+  if (serviceName && serviceName.length > 2) {
+    const serviceParts = serviceName.toLowerCase().split(/[\s_-]+/);
+    const containsServiceInfo = serviceParts.some(part => part.length > 2 && password.toLowerCase().includes(part));
+    if (containsServiceInfo) {
+      checks.push({ 
+        label: "Sem dados do serviço na senha", 
+        passed: false, 
+        suggestion: "Não inclua o nome do serviço na senha" 
+      });
+    }
+  }
+
   const passed = checks.filter((c) => c.passed).length;
-  const strength = (passed / checks.length) * 100;
+  const total = checks.length;
+  const strength = (passed / total) * 100;
   const issues = checks.filter((c) => !c.passed).map((c) => c.label);
   const suggestions = checks.filter((c) => !c.passed && c.suggestion).map((c) => c.suggestion!);
   return { checks, strength, issues, suggestions };
@@ -84,8 +100,14 @@ export function PasswordAnalyzer() {
       return;
     }
     setAdding(true);
-    const analysis = analyzePasswordStrength(newPassword);
+    const analysis = analyzePasswordStrength(newPassword, newService);
     const id = crypto.randomUUID();
+    const isReused = audited.some(p => p.password === newPassword);
+    
+    if (isReused) {
+      analysis.suggestions.push("Esta senha já está sendo usada em outro serviço. Evite reutilização.");
+    }
+
     const entry: AuditedPassword = {
       id,
       service: newService.trim(),
@@ -96,6 +118,7 @@ export function PasswordAnalyzer() {
       pwned: false,
       pwnedCount: 0,
       checking: true,
+      reused: isReused,
     };
     setAudited((prev) => [entry, ...prev]);
     setNewService("");
@@ -109,7 +132,7 @@ export function PasswordAnalyzer() {
         )
       );
       if (result.pwned) {
-        toast.error(`Senha exposta em ${result.count.toLocaleString("pt-BR")} vazamentos!`);
+        toast.error(`Senha de ${newService} exposta em vazamentos!`);
       } else if (analysis.strength >= 80) {
         toast.success("Senha forte e não encontrada em vazamentos");
       }
@@ -170,7 +193,7 @@ export function PasswordAnalyzer() {
 
   const togglePasswordVisibility = (id: string) => setShowPasswords((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  const customAnalysis = customPassword ? analyzePasswordStrength(customPassword) : null;
+  const customAnalysis = customPassword ? analyzePasswordStrength(customPassword, "Custom") : null;
   const weakCount = audited.filter((p) => p.strength < 80 || p.pwned).length;
 
   const history = getScanHistory();
@@ -387,6 +410,18 @@ export function PasswordAnalyzer() {
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-4 pt-4 border-t border-border space-y-3"
                       >
+                        {pw.reused && (
+                          <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <AlertTriangle className="w-4 h-4 text-warning" />
+                              <span className="text-sm font-semibold text-warning">Senha Reutilizada</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Detectamos que você usa esta mesma senha em múltiplos serviços. Se <strong className="text-foreground">{pw.service}</strong> ou outro site for hackeado, todas as suas contas estarão em risco.
+                            </p>
+                          </div>
+                        )}
+
                         {pw.pwned && (
                           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
                             <div className="flex items-center gap-2 mb-1">
@@ -395,7 +430,19 @@ export function PasswordAnalyzer() {
                             </div>
                             <p className="text-xs text-muted-foreground">
                               Esta senha aparece <strong className="text-destructive">{pw.pwnedCount.toLocaleString("pt-BR")}</strong> vezes
-                              em bases de dados públicas. Troque imediatamente.
+                              em bases de dados públicas. Troque imediatamente para proteger sua conta em <strong className="text-foreground">{pw.service}</strong>.
+                            </p>
+                          </div>
+                        )}
+
+                        {!pw.pwned && pw.strength < 60 && (
+                          <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <AlertTriangle className="w-4 h-4 text-warning" />
+                              <span className="text-sm font-semibold text-warning">Proteção Insuficiente</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Sua senha para <strong className="text-foreground">{pw.service}</strong> é fácil de ser descoberta por ataques de força bruta. Siga as recomendações abaixo.
                             </p>
                           </div>
                         )}
@@ -404,7 +451,7 @@ export function PasswordAnalyzer() {
                           <>
                             <div className="flex items-center gap-2">
                               <Lightbulb className="w-4 h-4 text-warning" />
-                              <span className="text-sm font-medium text-foreground">Sugestões de Correção</span>
+                              <span className="text-sm font-medium text-foreground">Recomendações para {pw.service}</span>
                             </div>
                             <ul className="space-y-2">
                               {pw.suggestions.map((s, i) => (
