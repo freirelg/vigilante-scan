@@ -796,7 +796,21 @@ export function NetworkSecurity() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="font-medium text-foreground">{check.title}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground">{check.title}</p>
+                        {check.helpText && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-primary cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-[200px] text-xs">
+                                <p>{check.helpText}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                       <StatusIcon status={check.status} />
                     </div>
                     <p className="text-sm text-muted-foreground">
