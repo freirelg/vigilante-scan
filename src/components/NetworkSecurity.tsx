@@ -859,7 +859,81 @@ export function NetworkSecurity() {
             animate={{ opacity: 1 }}
             className="space-y-3"
           >
-            {filteredChecks.map((check, index) => (
+            {scanned ? filteredChecks.map((check, index) => (
+              <motion.div
+                key={check.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className={`glass-card p-4 border ${getBg(check.status)}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg flex-shrink-0 ${getIconWrap(check.status)}`}>
+                    {check.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground">{check.title}</p>
+                        {check.helpText && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-primary cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-[200px] text-xs">
+                                <p>{check.helpText}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                      <StatusIcon status={check.status} />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {check.details || check.description}
+                    </p>
+
+                    {check.data && check.data.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        {check.data.map((item) => (
+                          <div
+                            key={item}
+                            className="font-mono text-xs px-2 py-1 rounded bg-muted/50 text-foreground inline-block mr-1"
+                          >
+                            {item}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {check.recommendation && (
+                      <div className="mt-3 p-3 rounded-lg bg-muted/40 border border-border/50">
+                        <p className="text-xs font-medium text-foreground mb-1 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3 text-warning" />
+                          Recomendação
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {check.recommendation}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )) : (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="glass-card p-4 border border-border animate-pulse flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded w-1/3" />
+                      <div className="h-3 bg-muted rounded w-2/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
               <motion.div
                 key={check.id}
                 initial={{ opacity: 0, x: -20 }}
