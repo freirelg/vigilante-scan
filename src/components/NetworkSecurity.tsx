@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Wifi,
@@ -21,7 +21,10 @@ import {
   ShieldQuestion,
   Gauge,
   Network,
-  
+  ArrowRight,
+  Shield,
+  Smartphone,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
