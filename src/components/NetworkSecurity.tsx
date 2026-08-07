@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Wifi,
@@ -21,7 +21,10 @@ import {
   ShieldQuestion,
   Gauge,
   Network,
-  
+  ArrowRight,
+  Shield,
+  Smartphone,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -152,122 +155,122 @@ export function NetworkSecurity() {
     return "integrity";
   };
 
+  const initialChecks: NetworkCheck[] = useMemo(() => [
+    {
+      id: "https",
+      title: "Conexão HTTPS",
+      description: "Garante que os dados entre você e o site sejam secretos e ilegíveis para hackers.",
+      icon: <Lock className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "webrtc",
+      title: "Vazamento WebRTC",
+      description: "Evita que seu endereço real seja descoberto por sites maliciosos, mesmo usando VPN.",
+      icon: <Radio className="w-5 h-5" />,
+      status: "idle",
+      helpText: "WebRTC permite chamadas de vídeo no navegador, mas pode vazar seu IP real mesmo usando VPN.",
+    },
+    {
+      id: "localip",
+      title: "Exposição de IP Local",
+      description: "Protege a identidade interna do seu dispositivo na rede doméstica ou empresarial.",
+      icon: <Eye className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "publicip",
+      title: "IP Público",
+      description: "Monitora como o mundo enxerga sua conexão na internet.",
+      icon: <Globe className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "dns",
+      title: "Integridade de Dados",
+      description: "Verifica se as informações que você envia não estão sendo alteradas no caminho.",
+      icon: <Server className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "doh",
+      title: "DNS Seguro (DoH)",
+      description: "Impede que seu provedor de internet rastreie quais sites você visita.",
+      icon: <ShieldCheck className="w-5 h-5" />,
+      status: "idle",
+      helpText: "DoH protege seu histórico de navegação contra espionagem do provedor de internet.",
+    },
+    {
+      id: "mixed",
+      title: "Conteúdo Inseguro",
+      description: "Detecta se elementos perigosos sem criptografia estão tentando rodar nesta página.",
+      icon: <FileWarning className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "tls",
+      title: "Modernidade da Conexão",
+      description: "Analisa se você está usando a tecnologia de comunicação mais rápida e segura disponível.",
+      icon: <Server className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "latency",
+      title: "Estabilidade do Sinal",
+      description: "Mede o atraso e a consistência da sua conexão para evitar quedas bruscas.",
+      icon: <Radio className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "geoip",
+      title: "Rastreio de Localização",
+      description: "Compara onde você parece estar com onde você realmente está para detectar espionagem.",
+      icon: <MapPin className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "hsts",
+      title: "Forçar Criptografia",
+      description: "Garante que o navegador nunca aceite uma conexão insegura com este serviço.",
+      icon: <ListChecks className="w-5 h-5" />,
+      status: "idle",
+      helpText: "HSTS garante que seu navegador nunca use uma conexão insegura (HTTP) com este site.",
+    },
+    {
+      id: "captive",
+      title: "Redes Públicas (Wi-Fi)",
+      description: "Detecta se um Wi-Fi público está tentando interceptar sua navegação para roubar dados.",
+      icon: <WifiIcon className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "headers",
+      title: "Blindagem do Navegador",
+      description: "Verifica as instruções de segurança que o site envia para proteger seu acesso.",
+      icon: <ShieldQuestion className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "quality",
+      title: "Qualidade da Rede",
+      description: "Avalia a velocidade real e a tecnologia de conexão (4G, 5G ou Wi-Fi) atual.",
+      icon: <Gauge className="w-5 h-5" />,
+      status: "idle",
+    },
+    {
+      id: "ports",
+      title: "Barreira de Fogo (Firewall)",
+      description: "Testa se as portas de entrada estão protegidas contra invasões externas.",
+      icon: <Network className="w-5 h-5" />,
+      status: "idle",
+    },
+  ], []);
+
   const runFullScan = async () => {
     setIsScanning(true);
     setScanned(false);
 
-    const initialChecks: NetworkCheck[] = [
-      {
-        id: "https",
-        title: "Conexão HTTPS",
-        description: "Garante que os dados entre você e o site sejam secretos e ilegíveis para hackers.",
-        icon: <Lock className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "webrtc",
-        title: "Vazamento WebRTC",
-        description: "Evita que seu endereço real seja descoberto por sites maliciosos, mesmo usando VPN.",
-        icon: <Radio className="w-5 h-5" />,
-        status: "running",
-        helpText: "WebRTC permite chamadas de vídeo no navegador, mas pode vazar seu IP real mesmo usando VPN.",
-      },
-      {
-        id: "localip",
-        title: "Exposição de IP Local",
-        description: "Protege a identidade interna do seu dispositivo na rede doméstica ou empresarial.",
-        icon: <Eye className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "publicip",
-        title: "IP Público",
-        description: "Monitora como o mundo enxerga sua conexão na internet.",
-        icon: <Globe className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "dns",
-        title: "Integridade de Dados",
-        description: "Verifica se as informações que você envia não estão sendo alteradas no caminho.",
-        icon: <Server className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "doh",
-        title: "DNS Seguro (DoH)",
-        description: "Impede que seu provedor de internet rastreie quais sites você visita.",
-        icon: <ShieldCheck className="w-5 h-5" />,
-        status: "running",
-        helpText: "DoH protege seu histórico de navegação contra espionagem do provedor de internet.",
-      },
-      {
-        id: "mixed",
-        title: "Conteúdo Inseguro",
-        description: "Detecta se elementos perigosos sem criptografia estão tentando rodar nesta página.",
-        icon: <FileWarning className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "tls",
-        title: "Modernidade da Conexão",
-        description: "Analisa se você está usando a tecnologia de comunicação mais rápida e segura disponível.",
-        icon: <Server className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "latency",
-        title: "Estabilidade do Sinal",
-        description: "Mede o atraso e a consistência da sua conexão para evitar quedas bruscas.",
-        icon: <Radio className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "geoip",
-        title: "Rastreio de Localização",
-        description: "Compara onde você parece estar com onde você realmente está para detectar espionagem.",
-        icon: <MapPin className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "hsts",
-        title: "Forçar Criptografia",
-        description: "Garante que o navegador nunca aceite uma conexão insegura com este serviço.",
-        icon: <ListChecks className="w-5 h-5" />,
-        status: "running",
-        helpText: "HSTS garante que seu navegador nunca use uma conexão insegura (HTTP) com este site.",
-      },
-      {
-        id: "captive",
-        title: "Redes Públicas (Wi-Fi)",
-        description: "Detecta se um Wi-Fi público está tentando interceptar sua navegação para roubar dados.",
-        icon: <WifiIcon className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "headers",
-        title: "Blindagem do Navegador",
-        description: "Verifica as instruções de segurança que o site envia para proteger seu acesso.",
-        icon: <ShieldQuestion className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "quality",
-        title: "Qualidade da Rede",
-        description: "Avalia a velocidade real e a tecnologia de conexão (4G, 5G ou Wi-Fi) atual.",
-        icon: <Gauge className="w-5 h-5" />,
-        status: "running",
-      },
-      {
-        id: "ports",
-        title: "Barreira de Fogo (Firewall)",
-        description: "Testa se as portas de entrada estão protegidas contra invasões externas.",
-        icon: <Network className="w-5 h-5" />,
-        status: "running",
-      },
-    ];
-
-    setChecks(initialChecks);
+    setChecks(initialChecks.map(c => ({ ...c, status: "running" })));
 
     // 1. HTTPS check (real)
     await new Promise((r) => setTimeout(r, 600));
@@ -742,22 +745,20 @@ export function NetworkSecurity() {
 
   return (
     <div className="space-y-6">
-      {/* Header Card with Veredito (Item 2) */}
+      {/* Connection Map (Melhoria 5) */}
       <motion.div
-        className="glass-card p-6"
+        className="glass-card p-6 overflow-hidden relative"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-xl gradient-primary glow-primary">
-              <Wifi className="w-6 h-6 text-primary-foreground" />
+              <Network className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Análise de Rede</h3>
-              <p className="text-sm text-muted-foreground">
-                Privacidade e Integridade
-              </p>
+              <h3 className="font-semibold text-foreground">Mapa de Conexão</h3>
+              <p className="text-sm text-muted-foreground">Estrutura e integridade da rota</p>
             </div>
           </div>
           {scanned && (
@@ -766,6 +767,81 @@ export function NetworkSecurity() {
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Score de Rede</div>
             </div>
           )}
+        </div>
+
+        <div className="relative flex items-center justify-between px-2 mb-10 mt-4">
+          {/* Device */}
+          <div className="flex flex-col items-center gap-2 z-10">
+            <div className={`p-4 rounded-full border-2 transition-colors ${
+              isScanning ? "border-primary animate-pulse" : 
+              scanned ? (checks.some(c => ["localip", "quality"].includes(c.id) && c.status === "danger") ? "border-destructive bg-destructive/10" : "border-success bg-success/10") : 
+              "border-border bg-secondary/30"
+            }`}>
+              <Smartphone className={`w-6 h-6 ${
+                scanned && checks.some(c => ["localip", "quality"].includes(c.id) && c.status === "danger") ? "text-destructive" : 
+                scanned ? "text-success" : "text-muted-foreground"
+              }`} />
+            </div>
+            <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter">Dispositivo</span>
+          </div>
+
+          {/* Line 1 */}
+          <div className="flex-1 h-[2px] mx-2 relative bg-border overflow-hidden">
+            {(isScanning || scanned) && (
+              <motion.div 
+                className={`absolute inset-0 ${
+                  scanned && checks.some(c => ["https", "doh", "dns"].includes(c.id) && c.status === "danger") ? "bg-destructive" : "bg-primary"
+                }`}
+                initial={{ x: "-100%" }}
+                animate={{ x: isScanning ? ["-100%", "100%"] : "0%" }}
+                transition={isScanning ? { repeat: Infinity, duration: 1.5, ease: "linear" } : { duration: 0.5 }}
+              />
+            )}
+          </div>
+
+          {/* DNS / Server */}
+          <div className="flex flex-col items-center gap-2 z-10">
+            <div className={`p-4 rounded-full border-2 transition-colors ${
+              isScanning ? "border-primary animate-pulse" : 
+              scanned ? (checks.some(c => ["doh", "dns"].includes(c.id) && c.status === "danger") ? "border-destructive bg-destructive/10" : "border-success bg-success/10") : 
+              "border-border bg-secondary/30"
+            }`}>
+              <Server className={`w-6 h-6 ${
+                scanned && checks.some(c => ["doh", "dns"].includes(c.id) && c.status === "danger") ? "text-destructive" : 
+                scanned ? "text-success" : "text-muted-foreground"
+              }`} />
+            </div>
+            <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter">DNS/Provedor</span>
+          </div>
+
+          {/* Line 2 */}
+          <div className="flex-1 h-[2px] mx-2 relative bg-border overflow-hidden">
+            {(isScanning || scanned) && (
+              <motion.div 
+                className={`absolute inset-0 ${
+                  scanned && checks.some(c => ["webrtc", "publicip", "geoip"].includes(c.id) && c.status === "danger") ? "bg-destructive" : "bg-primary"
+                }`}
+                initial={{ x: "-100%" }}
+                animate={{ x: isScanning ? ["-100%", "100%"] : "0%" }}
+                transition={isScanning ? { repeat: Infinity, duration: 1.5, ease: "linear", delay: 0.75 } : { duration: 0.5 }}
+              />
+            )}
+          </div>
+
+          {/* Internet */}
+          <div className="flex flex-col items-center gap-2 z-10">
+            <div className={`p-4 rounded-full border-2 transition-colors ${
+              isScanning ? "border-primary animate-pulse" : 
+              scanned ? (checks.some(c => ["webrtc", "publicip", "geoip"].includes(c.id) && c.status === "danger") ? "border-destructive bg-destructive/10" : "border-success bg-success/10") : 
+              "border-border bg-secondary/30"
+            }`}>
+              <Globe className={`w-6 h-6 ${
+                scanned && checks.some(c => ["webrtc", "publicip", "geoip"].includes(c.id) && c.status === "danger") ? "text-destructive" : 
+                scanned ? "text-success" : "text-muted-foreground"
+              }`} />
+            </div>
+            <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter">Internet</span>
+          </div>
         </div>
 
         {scanned && (
@@ -923,13 +999,25 @@ export function NetworkSecurity() {
               </motion.div>
             )) : (
               <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="glass-card p-4 border border-border animate-pulse flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-muted rounded w-1/3" />
-                      <div className="h-3 bg-muted rounded w-2/3" />
+                {/* Skeleton screens showing structure during scan */}
+                {initialChecks.map((check, i) => (
+                  <div key={check.id} className="glass-card p-4 border border-border flex items-start gap-3 opacity-50 relative overflow-hidden">
+                    <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center text-muted-foreground">
+                      {check.icon}
                     </div>
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="h-4 bg-muted rounded w-1/3" />
+                        <Search className="w-4 h-4 text-primary animate-pulse" />
+                      </div>
+                      <div className="h-3 bg-muted rounded w-3/4" />
+                    </div>
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent"
+                      initial={{ x: "-100%" }}
+                      animate={{ x: "100%" }}
+                      transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.1 }}
+                    />
                   </div>
                 ))}
               </div>
