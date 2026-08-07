@@ -1,8 +1,16 @@
-import { Lock, Sparkles, Crown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Lock, Sparkles, Crown, Key } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { START_SCAN_LIMIT, getScansUsed } from "@/lib/edition";
+import { Input } from "@/components/ui/input";
+import { 
+  getScanLimit, 
+  getScansUsed, 
+  redeemCode, 
+  getAccessLevel 
+} from "@/lib/edition";
+import { toast } from "sonner";
 
 interface UpgradeBlockProps {
   title?: string;
@@ -15,8 +23,32 @@ export function UpgradeBlock({
   reason = "limit",
   featureName,
 }: UpgradeBlockProps) {
-  const used = getScansUsed();
+  const [code, setCode] = useState("");
+  const [used, setUsed] = useState(getScansUsed());
+  const [limit, setLimit] = useState(getScanLimit());
+  const [level, setLevel] = useState(getAccessLevel());
+  
+  useEffect(() => {
+    const handleUpdate = () => {
+      setUsed(getScansUsed());
+      setLimit(getScanLimit());
+      setLevel(getAccessLevel());
+    };
+    window.addEventListener("freirenet-usage-updated", handleUpdate);
+    return () => window.removeEventListener("freirenet-usage-updated", handleUpdate);
+  }, []);
+
   const isLimit = reason === "limit";
+
+  const handleRedeem = () => {
+    const result = redeemCode(code);
+    if (result.ok) {
+      toast.success(result.message);
+      setCode("");
+    } else {
+      toast.error(result.message);
+    }
+  };
 
   return (
     <Card className="p-6 bg-card border-border relative overflow-hidden">
@@ -45,17 +77,42 @@ export function UpgradeBlock({
               : `${featureName ?? "Este recurso"} é da versão avançada`)}
         </h3>
 
-        <p className="text-sm text-muted-foreground max-w-sm mb-1">
-          {isLimit
-            ? `Você já usou ${used} de ${START_SCAN_LIMIT} scans disponíveis na versão Start.`
-            : "Este recurso não está incluído na versão gratuita Start."}
-        </p>
-        <p className="text-sm text-muted-foreground max-w-sm mb-5">
-          Para continuar protegendo o seu aparelho, atualize para a versão{" "}
-          <span className="text-foreground font-semibold">Essencial</span> ou{" "}
-          <span className="text-foreground font-semibold">Pro</span> e libere
-          scans ilimitados e todos os recursos avançados.
-        </p>
+        <div className="text-sm text-muted-foreground max-w-sm mb-4">
+          {isLimit ? (
+            <p>
+              Você já usou <span className="text-foreground font-bold">{used}</span> de{" "}
+              <span className="text-foreground font-bold">{limit === Infinity ? "∞" : limit}</span> scans disponíveis.
+            </p>
+          ) : (
+            <p>Este recurso não está incluído na versão gratuita Start.</p>
+          )}
+        </div>
+
+        {/* Password entry for unlocking */}
+        <div className="w-full max-w-sm space-y-3 mb-6">
+          <div className="relative">
+            <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="password"
+              placeholder="Digite a senha para desbloquear"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="pl-10 bg-secondary/50 border-border"
+            />
+          </div>
+          <Button 
+            onClick={handleRedeem}
+            className="w-full gap-2"
+            variant="secondary"
+          >
+            Validar Senha
+          </Button>
+          
+          <p className="text-[10px] text-muted-foreground italic">
+            {level === 0 && "Insira a senha de 50 scans ou de Acesso Livre."}
+            {level === 1 && "Insira a senha de Acesso Livre para libertação total."}
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm mb-5 text-left">
           <div className="p-3 rounded-lg border border-border bg-muted/20">
@@ -84,9 +141,6 @@ export function UpgradeBlock({
           <Crown className="w-4 h-4" />
           Atualizar em breve
         </Button>
-        <p className="text-[11px] text-muted-foreground mt-2">
-          Compra ainda não disponível — em breve nesta tela.
-        </p>
       </div>
     </Card>
   );
