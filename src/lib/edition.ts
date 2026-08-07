@@ -77,12 +77,23 @@ export function isBlocked(): boolean {
 }
 
 // Which tabs are premium (locked in Start edition)
+// Level 0 (up to 30 scans): Only "score" and "history"
+// Level 1 (up to 50 scans): "score", "history", "intrusion"
+// Level 2 (Unlimited): All tabs
 export const PREMIUM_TABS = new Set(["intrusion", "optimize", "password", "network"]);
 
 export function isPremiumTab(tabId: string): boolean {
   if (EDITION !== "start") return false;
-  if (isUnlocked()) return false;
-  return PREMIUM_TABS.has(tabId);
+  const level = getAccessLevel();
+  if (level >= 2) return false;
+  
+  if (level === 1) {
+    // Only block optimize, password, network
+    return ["optimize", "password", "network"].includes(tabId);
+  }
+  
+  // Level 0: block intrusion, optimize, password, network
+  return ["intrusion", "optimize", "password", "network"].includes(tabId);
 }
 
 export type RedeemResult =
