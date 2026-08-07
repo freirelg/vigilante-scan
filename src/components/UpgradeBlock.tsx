@@ -111,6 +111,7 @@ export function UpgradeBlock({
           <p className="text-[10px] text-muted-foreground italic">
             {level === 0 && "Insira a senha de 50 scans ou de Acesso Livre."}
             {level === 1 && "Insira a senha de Acesso Livre para libertação total."}
+            {level >= 2 && "Acesso total liberado!"}
           </p>
         </div>
 
