@@ -999,13 +999,25 @@ export function NetworkSecurity() {
               </motion.div>
             )) : (
               <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="glass-card p-4 border border-border animate-pulse flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-muted rounded w-1/3" />
-                      <div className="h-3 bg-muted rounded w-2/3" />
+                {/* Skeleton screens showing structure during scan */}
+                {initialChecks.map((check, i) => (
+                  <div key={check.id} className="glass-card p-4 border border-border flex items-start gap-3 opacity-50 relative overflow-hidden">
+                    <div className="w-10 h-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center text-muted-foreground">
+                      {check.icon}
                     </div>
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="h-4 bg-muted rounded w-1/3" />
+                        <Search className="w-4 h-4 text-primary animate-pulse" />
+                      </div>
+                      <div className="h-3 bg-muted rounded w-3/4" />
+                    </div>
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent"
+                      initial={{ x: "-100%" }}
+                      animate={{ x: "100%" }}
+                      transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.1 }}
+                    />
                   </div>
                 ))}
               </div>
