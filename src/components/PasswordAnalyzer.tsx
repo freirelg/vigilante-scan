@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, EyeOff, Lock, Shield, AlertTriangle, CheckCircle,
-  Copy, RefreshCw, Search, Lightbulb, ChevronRight, ShieldAlert, Loader2, Trash2, Plus, Info,
+  Copy, RefreshCw, Search, Lightbulb, ChevronRight, ShieldAlert, Loader2, Trash2, Plus, Info, XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -545,14 +545,69 @@ export function PasswordAnalyzer() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h4 className="font-semibold text-foreground mb-3">Dicas de Segurança</h4>
-        <ul className="space-y-2 text-sm text-muted-foreground">
-          <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />Use senhas diferentes para cada conta</li>
-          <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />Prefira frases-passe longas (14+ caracteres)</li>
-          <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />Use um gerenciador de senhas confiável</li>
-          <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />Ative autenticação de dois fatores (2FA)</li>
-        </ul>
+        <div className="flex flex-col gap-6">
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle className="w-5 h-5 text-success" />
+              <h4 className="font-semibold text-foreground">Recomendações de Segurança</h4>
+            </div>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              <li className="flex items-start gap-3 p-3 rounded-lg bg-success/5 border border-success/10">
+                <Shield className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Use um Gerenciador de Senhas</p>
+                  <p className="text-xs">Armazene senhas complexas de forma segura sem precisar decorá-las.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3 p-3 rounded-lg bg-success/5 border border-success/10">
+                <Lock className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Frases-Passe (Passphrases)</p>
+                  <p className="text-xs">Combine 4 ou mais palavras aleatórias (ex: "Cavalo-Azul-Porta-99"). São fáceis de lembrar e difíceis de hackear.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3 p-3 rounded-lg bg-success/5 border border-success/10">
+                <CheckCircle className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Ative o 2FA (Dois Fatores)</p>
+                  <p className="text-xs">Mesmo que descubram sua senha, precisarão de um código extra no seu celular para acessar.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div className="pt-6 border-t border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <XCircle className="w-5 h-5 text-destructive" />
+              <h4 className="font-semibold text-foreground">O que NÃO fazer</h4>
+            </div>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              <li className="flex items-start gap-3 p-3 rounded-lg bg-destructive/5 border border-destructive/10">
+                <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Nunca reutilize senhas</p>
+                  <p className="text-xs">Se um site for hackeado, todas as suas outras contas (e-mail, banco) estarão em risco.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3 p-3 rounded-lg bg-destructive/5 border border-destructive/10">
+                <XCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Evite dados pessoais</p>
+                  <p className="text-xs">Não use datas de nascimento, nomes de familiares, pets ou números de telefone na senha.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3 p-3 rounded-lg bg-destructive/5 border border-destructive/10">
+                <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Não salve em arquivos de texto</p>
+                  <p className="text-xs">Evite anotar senhas em blocos de notas, planilhas sem senha ou post-its colados no monitor.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
       </motion.div>
+
     </div>
   );
 }
