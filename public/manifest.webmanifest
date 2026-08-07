@@ -1,7 +1,7 @@
 {
   "name": "FreireNet-SecureGuard",
   "short_name": "FreireNet",
-  "description": "Scanner de vulnerabilidade, otimização e análise de senhas para o seu celular.",
+  "description": "Inteligência em Segurança Digital na Palma da Sua Mão",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
