@@ -137,6 +137,20 @@ export function NetworkSecurity() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [checks, setChecks] = useState<NetworkCheck[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+
+  const categories = [
+    { id: "all", label: "Tudo" },
+    { id: "identity", label: "Privacidade" },
+    { id: "crypto", label: "Criptografia" },
+    { id: "integrity", label: "Performance" },
+  ];
+
+  const getCheckCategory = (id: string) => {
+    if (["webrtc", "localip", "publicip", "geoip"].includes(id)) return "identity";
+    if (["https", "dns", "doh", "tls", "hsts", "headers"].includes(id)) return "crypto";
+    return "integrity";
+  };
 
   const runFullScan = async () => {
     setIsScanning(true);
