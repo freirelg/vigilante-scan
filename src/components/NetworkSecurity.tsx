@@ -721,82 +721,145 @@ export function NetworkSecurity() {
   const warningCount = checks.filter((c) => c.status === "warning").length;
   const safeCount = checks.filter((c) => c.status === "safe").length;
 
+  const calculateNetworkScore = () => {
+    if (checks.length === 0) return 0;
+    const weights: Record<CheckStatus, number> = {
+      idle: 0,
+      running: 0,
+      safe: 100,
+      warning: 50,
+      danger: 0
+    };
+    const totalScore = checks.reduce((acc, c) => acc + weights[c.status], 0);
+    return Math.round(totalScore / checks.length);
+  };
+
+  const score = calculateNetworkScore();
+
+  const filteredChecks = activeCategory === "all" 
+    ? checks 
+    : checks.filter(c => getCheckCategory(c.id) === activeCategory);
+
   return (
     <div className="space-y-6">
-      {/* Header Card */}
+      {/* Header Card with Veredito (Item 2) */}
       <motion.div
         className="glass-card p-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-3 rounded-xl gradient-primary glow-primary">
-            <Wifi className="w-6 h-6 text-primary-foreground" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl gradient-primary glow-primary">
+              <Wifi className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">Análise de Rede</h3>
+              <p className="text-sm text-muted-foreground">
+                Privacidade e Integridade
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-foreground">Análise de Rede</h3>
-            <p className="text-sm text-muted-foreground">
-              WebRTC, HTTPS e exposição de IP
-            </p>
-          </div>
+          {scanned && (
+            <div className="flex flex-col items-end">
+              <div className="text-2xl font-bold text-primary">{score}%</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Score de Rede</div>
+            </div>
+          )}
         </div>
 
-        <div className="mb-4">
+        {scanned && (
+          <div className="mb-6 p-4 rounded-xl bg-secondary/30 border border-border/50">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-foreground">Veredito de Segurança</span>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                score >= 90 ? "bg-success/20 text-success" : score >= 70 ? "bg-warning/20 text-warning" : "bg-destructive/20 text-destructive"
+              }`}>
+                {score >= 90 ? "EXCELENTE" : score >= 70 ? "MODERADO" : "RISCO ALTO"}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {score >= 90 
+                ? "Sua rede apresenta altos padrões de criptografia e sua privacidade está bem protegida." 
+                : score >= 70 
+                  ? "Foram detectados alguns pontos de atenção. Sua privacidade pode estar parcialmente exposta."
+                  : "Vulnerabilidades críticas encontradas. Recomendamos o uso de VPN e revisão dos protocolos."}
+            </p>
+          </div>
+        )}
+
+        <div className="mb-6">
           <LiveTrafficChart />
         </div>
 
-
-        {scanned && (
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="text-center p-3 rounded-lg bg-success/10">
-              <p className="text-2xl font-bold text-success">{safeCount}</p>
-              <p className="text-xs text-muted-foreground">Seguros</p>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-warning/10">
-              <p className="text-2xl font-bold text-warning">{warningCount}</p>
-              <p className="text-xs text-muted-foreground">Alertas</p>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-destructive/10">
-              <p className="text-2xl font-bold text-destructive">{criticalCount}</p>
-              <p className="text-xs text-muted-foreground">Críticos</p>
-            </div>
+        <div className="grid grid-cols-3 gap-2 mb-6">
+          <div className="text-center p-3 rounded-xl bg-success/5 border border-success/10">
+            <p className="text-xl font-bold text-success">{scanned ? safeCount : "-"}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Seguros</p>
           </div>
-        )}
+          <div className="text-center p-3 rounded-xl bg-warning/5 border border-warning/10">
+            <p className="text-xl font-bold text-warning">{scanned ? warningCount : "-"}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Alertas</p>
+          </div>
+          <div className="text-center p-3 rounded-xl bg-destructive/5 border border-destructive/10">
+            <p className="text-xl font-bold text-destructive">{scanned ? criticalCount : "-"}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Críticos</p>
+          </div>
+        </div>
 
         <Button
           onClick={runFullScan}
           disabled={isScanning}
           size="lg"
-          className="w-full"
+          className="w-full shadow-lg shadow-primary/20"
         >
           {isScanning ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
               Analisando rede...
             </>
           ) : scanned ? (
             <>
-              <RefreshCw className="w-5 h-5" />
+              <RefreshCw className="w-5 h-5 mr-2" />
               Analisar Novamente
             </>
           ) : (
             <>
-              <Wifi className="w-5 h-5" />
+              <Wifi className="w-5 h-5 mr-2" />
               Iniciar Análise de Rede
             </>
           )}
         </Button>
       </motion.div>
 
+      {/* Categories Filter (Item 1) */}
+      {scanned && (
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none px-1">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
+                activeCategory === cat.id
+                  ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
+                  : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/50"
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Checks List */}
-      <AnimatePresence>
+      <AnimatePresence mode="popLayout">
         {checks.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="space-y-3"
           >
-            {checks.map((check, index) => (
+            {filteredChecks.map((check, index) => (
               <motion.div
                 key={check.id}
                 initial={{ opacity: 0, x: -20 }}
