@@ -410,6 +410,18 @@ export function PasswordAnalyzer() {
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-4 pt-4 border-t border-border space-y-3"
                       >
+                        {pw.reused && (
+                          <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <AlertTriangle className="w-4 h-4 text-warning" />
+                              <span className="text-sm font-semibold text-warning">Senha Reutilizada</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Detectamos que você usa esta mesma senha em múltiplos serviços. Se <strong className="text-foreground">{pw.service}</strong> ou outro site for hackeado, todas as suas contas estarão em risco.
+                            </p>
+                          </div>
+                        )}
+
                         {pw.pwned && (
                           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
                             <div className="flex items-center gap-2 mb-1">
