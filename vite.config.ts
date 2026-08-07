@@ -22,30 +22,42 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: "Freirenet-SecureGuard",
         short_name: "Freirenet",
-        description: "Scanner de segurança, otimização e análise de senhas para seu dispositivo",
+        description: "Inteligência em Segurança Digital na Palma da Sua Mão",
         theme_color: "#0d1117",
         background_color: "#0d1117",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
         start_url: "/",
+        categories: ["security", "utilities"],
+        screenshots: [
+          {
+            src: "/pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Dashboard de Segurança"
+          }
+        ],
         icons: [
           {
             src: "/pwa-192x192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any"
           },
           {
             src: "/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any"
           },
           {
             src: "/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any maskable",
-          },
+            purpose: "maskable"
+          }
         ],
       },
       workbox: {
