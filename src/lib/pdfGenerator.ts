@@ -61,7 +61,7 @@ export async function generatePDFReport(data: {
       head: [["Categoria", "Pontuação"]],
       body: tableData,
       theme: "striped",
-      headStyles: { fillStyle: "F", fillColor: [59, 130, 246] },
+      headStyles: { fillColor: [59, 130, 246] },
     });
     
   } else if (data.type === "history" && data.summary) {
@@ -92,7 +92,7 @@ export async function generatePDFReport(data: {
       head: [["Data/Hora", "Score", "Avaliação"]],
       body: tableData,
       theme: "striped",
-      headStyles: { fillStyle: "F", fillColor: [59, 130, 246] },
+      headStyles: { fillColor: [59, 130, 246] },
     });
   }
 
