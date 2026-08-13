@@ -10,9 +10,7 @@ import {
   ShieldAlert,
   ShieldX,
   Calendar,
-  Download,
 } from "lucide-react";
-import { generatePDFReport } from "@/lib/pdfGenerator";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -331,40 +329,18 @@ export function ScanHistory() {
               Histórico de scans
             </h3>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary hover:text-primary gap-1"
-              onClick={() => {
-                generatePDFReport({
-                  type: "history",
-                  title: "Histórico de Scans Freirenet",
-                  records: history,
-                  summary: {
-                    avgScore: avg,
-                    bestScore: best,
-                    totalScans: history.length,
-                  },
-                });
-              }}
-            >
-              <Download className="w-3.5 h-3.5" />
-              Exportar PDF
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive gap-1"
-              onClick={() => {
-                clearScanHistory();
-                refresh();
-              }}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Limpar
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive gap-1"
+            onClick={() => {
+              clearScanHistory();
+              refresh();
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Limpar
+          </Button>
         </div>
 
         {history.map((r, i) => {
