@@ -1,12 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Activity, ArrowDown } from "lucide-react";
+import { Activity, ArrowDown, Zap, BarChart3, Database } from "lucide-react";
 import {
   Area,
   AreaChart,
   ResponsiveContainer,
-  Tooltip,
   YAxis,
+  CartesianGrid,
 } from "recharts";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 // Amostra tráfego real de recursos carregados pela página via PerformanceObserver
 // + monkey-patch de fetch/XHR para capturar Content-Length de respostas mesmo
