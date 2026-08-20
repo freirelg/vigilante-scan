@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Lock, Sparkles, Crown, Key, CreditCard, QrCode, CheckCircle2 } from "lucide-react";
+import { Lock, Sparkles, Crown, Key, CreditCard, QrCode, CheckCircle2, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
