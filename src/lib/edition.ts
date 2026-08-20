@@ -122,3 +122,10 @@ export function redeemCode(code: string): RedeemResult {
   
   return { ok: false, message: "Senha inválida." };
 }
+
+export function unlockFullAccess(): void {
+  try {
+    localStorage.setItem(KEY_LEVEL, "2");
+    window.dispatchEvent(new Event("freirenet-usage-updated"));
+  } catch {}
+}
