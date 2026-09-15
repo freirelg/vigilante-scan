@@ -135,7 +135,7 @@ export function DeviceOptimizer() {
       used: cache?.cacheSize ?? 0,
       total: storage?.quota ?? 0,
       usedLabel: cache ? formatBytes(cache.cacheSize) : "—",
-      totalLabel: `${cache?.cacheCount ?? 0} cache(s)`,
+      totalLabel: `${cache?.cacheCount ?? 0} grupo(s) de arquivos`,
       percentage: storage?.quota ? ((cache?.cacheSize ?? 0) / storage.quota) * 100 : 0,
       supported: true,
       note: "Pode apagar sem risco",
