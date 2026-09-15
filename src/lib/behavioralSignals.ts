@@ -172,11 +172,11 @@ export async function checkFingerprintChanges(): Promise<IntrusionCheck & { fing
     saveBaseline(current);
     return {
       id: "fingerprint",
-      title: "Fingerprint do Dispositivo",
-      description: "Baseline capturado agora. Próxima varredura irá comparar.",
+      title: "Identidade do seu aparelho",
+      description: "Guardamos como seu aparelho é hoje. Na próxima análise comparamos.",
       severity: "safe",
       details:
-        "Coletamos um snapshot local (UA, tela, timezone, WebGL, canvas, áudio, hardware) para detectar mudanças suspeitas em varreduras futuras. Dados ficam apenas no seu dispositivo.",
+        "Anotamos as características do seu aparelho (tela, som, memória, fuso horário) para perceber mudanças estranhas depois. Isso fica salvo só no seu celular.",
       evidence: [
         `WebGL: ${current.webglRenderer}`,
         `Canvas: ${current.canvasHash}`,
@@ -202,25 +202,25 @@ export async function checkFingerprintChanges(): Promise<IntrusionCheck & { fing
 
   const evidence = [...criticalDiffs, ...softDiffs].slice(0, 8);
   let severity: Severity = "safe";
-  let description = "Fingerprint estável — dispositivo consistente com o baseline.";
+  let description = "Seu aparelho continua igual ao registrado.";
 
   if (criticalDiffs.length > 0) {
     severity = "danger";
-    description = `⚠️ ${criticalDiffs.length} mudança(s) crítica(s) no fingerprint. Possível sessão sequestrada ou spoofing.`;
+    description = `⚠️ ${criticalDiffs.length} mudança(s) importante(s) no seu aparelho. Alguém pode estar usando sua conta em outro lugar.`;
   } else if (softDiffs.length >= 3) {
     severity = "warn";
-    description = `${softDiffs.length} campos mudaram (atualização de navegador ou VPN podem causar).`;
+    description = `${softDiffs.length} detalhes mudaram. Atualizar o navegador ou usar VPN costuma causar isso.`;
   } else if (softDiffs.length > 0) {
-    description = `${softDiffs.length} pequena(s) mudança(s) — provavelmente benignas.`;
+    description = `${softDiffs.length} pequena(s) mudança(s) — nada preocupante.`;
   }
 
   return {
     id: "fingerprint",
-    title: "Fingerprint do Dispositivo",
+    title: "Identidade do seu aparelho",
     description,
     severity,
     details:
-      "Compara o fingerprint atual (WebGL, canvas, áudio, hardware, tela, timezone) com o baseline salvo no seu navegador. Mudanças críticas em GPU/canvas/audio sem trocar de dispositivo são um forte sinal de ambiente clonado ou sessão exportada.",
+      "Comparamos as características de hoje com as que foram guardadas antes. Se mudarem muito sem você trocar de celular, pode ser sinal de que sua conta está sendo usada em outro aparelho.",
     evidence,
     fingerprint: current,
   };
@@ -358,24 +358,24 @@ export function checkBehavioralAnomalies(): IntrusionCheck {
 
   if (untrustedRatio > 0.1 && stats.untrustedEvents > 3) {
     severity = "danger";
-    description = `⚠️ ${(untrustedRatio * 100).toFixed(0)}% dos eventos não são confiáveis (isTrusted=false). Possível automação/RAT injetando ações.`;
+    description = `⚠️ ${(untrustedRatio * 100).toFixed(0)}% dos toques e cliques não vieram de você. Algo pode estar agindo sozinho no aparelho.`;
   } else if (stats.keystrokeIntervals.length >= 12 && jitterPct < 8 && avgInterval > 0) {
     severity = "warn";
-    description = `Digitação muito regular (jitter ${jitterPct.toFixed(0)}%) — típico de bots ou auto-fill agressivo.`;
+    description = `A digitação está regular demais (${jitterPct.toFixed(0)}% de variação) — parece feita por um programa, não por uma pessoa.`;
   } else if (stats.focusLossDuringInput >= 3) {
     severity = "warn";
-    description = `${stats.focusLossDuringInput} perdas de foco enquanto digitava — possível overlay de phishing ou extensão capturando entrada.`;
+    description = `A tela saiu do lugar ${stats.focusLossDuringInput} vezes enquanto você digitava — pode ser uma tela falsa por cima tentando pegar seus dados.`;
   } else if (stats.totalEvents < 5 && durationMin > 1) {
-    description = "Poucos eventos ainda — interaja com a página para melhorar a análise.";
+    description = "Ainda temos poucos dados — use o app um pouco para melhorar a análise.";
   }
 
   return {
     id: "behavior",
-    title: "Anomalias Comportamentais",
+    title: "Comportamento estranho no uso",
     description,
     severity,
     details:
-      "Observa se eventos de mouse/teclado têm isTrusted=false (só o navegador pode marcar true), mede jitter de digitação e conta perdas de foco durante inputs. Automação, RATs e extensões que injetam ações costumam falhar em pelo menos um desses sinais.",
+      "Observamos se os toques e a digitação parecem vir de você ou de um programa, e se a tela perde o foco enquanto você escreve. Programas invasores costumam escorregar em pelo menos um desses sinais.",
     evidence,
   };
 }

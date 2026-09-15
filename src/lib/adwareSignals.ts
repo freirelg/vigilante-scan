@@ -10,8 +10,8 @@ export async function checkRogueServiceWorkers(): Promise<IntrusionCheck> {
   if (!("serviceWorker" in navigator)) {
     return {
       id: "rogue-sw",
-      title: "Service Workers Estranhos",
-      description: "API de Service Worker indisponível neste navegador.",
+      title: "Programas rodando em segundo plano",
+      description: "Este navegador não permite essa verificação.",
       severity: "safe",
       details: "Nada a verificar.",
     };
@@ -38,31 +38,31 @@ export async function checkRogueServiceWorkers(): Promise<IntrusionCheck> {
     if (suspicious.length > 0) {
       return {
         id: "rogue-sw",
-        title: "Service Workers Estranhos",
-        description: `⚠️ ${suspicious.length} Service Worker(s) desconhecido(s) registrado(s).`,
+        title: "Programas rodando em segundo plano",
+        description: `⚠️ ${suspicious.length} programa(s) desconhecido(s) rodando em segundo plano.`,
         severity: "danger",
         details:
-          "Service Workers podem interceptar requests e servir conteúdo malicioso mesmo offline. Se você não reconhece, desregistre em Configurações do site → Service Workers.",
+          "Esses programas conseguem mudar o que aparece na tela, mesmo sem internet. Se você não reconhece, apague os dados do site nas configurações do navegador.",
         evidence,
       };
     }
 
     return {
       id: "rogue-sw",
-      title: "Service Workers Estranhos",
+      title: "Programas rodando em segundo plano",
       description:
         regs.length === 0
-          ? "Nenhum Service Worker registrado."
-          : `${regs.length} Service Worker(s) legítimo(s) ativo(s).`,
+          ? "Nada rodando em segundo plano."
+          : `${regs.length} programa(s) conhecido(s) rodando normalmente.`,
       severity: "safe",
-      details: "Todos os SWs pertencem à origem atual e estão em caminhos conhecidos.",
+      details: "Tudo pertence a este app e está em lugar conhecido.",
       evidence,
     };
   } catch (err) {
     return {
       id: "rogue-sw",
-      title: "Service Workers Estranhos",
-      description: "Erro ao consultar Service Workers.",
+      title: "Programas rodando em segundo plano",
+      description: "Não foi possível fazer essa verificação agora.",
       severity: "warn",
       details: String(err),
     };
@@ -76,15 +76,15 @@ export async function checkPushPermissions(): Promise<IntrusionCheck> {
   if (!("Notification" in window)) {
     return {
       id: "push-perm",
-      title: "Notificações Push",
-      description: "API de notificações indisponível.",
+      title: "Avisos que aparecem no celular",
+      description: "Este navegador não permite essa verificação.",
       severity: "safe",
       details: "Nada a verificar.",
     };
   }
 
   const status = Notification.permission;
-  evidence.push(`Permissão nesta origem: ${status}`);
+  evidence.push(`Situação neste site: ${status}`);
 
   // Push subscription details (se existir)
   try {
@@ -92,27 +92,27 @@ export async function checkPushPermissions(): Promise<IntrusionCheck> {
       const reg = await navigator.serviceWorker.getRegistration();
       const sub = await reg?.pushManager?.getSubscription();
       if (sub) {
-        evidence.push(`Endpoint push ativo: ${sub.endpoint.slice(0, 60)}…`);
+        evidence.push(`Envio de avisos ativo: ${sub.endpoint.slice(0, 60)}…`);
       }
     }
   } catch {}
 
   let severity: Severity = "safe";
-  let description = "Permissões de notificação estão saudáveis.";
+  let description = "Nenhum site está autorizado a te encher de avisos.";
 
   if (status === "granted") {
     severity = "warn";
     description =
-      "Esta origem tem permissão para push. Revise todos os sites com permissão no navegador.";
+      "Este site pode te enviar avisos. Confira a lista de sites autorizados no navegador.";
   }
 
   return {
     id: "push-perm",
-    title: "Notificações Push",
+    title: "Avisos que aparecem no celular",
     description,
     severity,
     details:
-      "Adware clássico pede permissão de push e depois envia anúncios/phishing. Verifique em chrome://settings/content/notifications (ou Configurações → Notificações no Firefox/Safari) e revogue sites que você não reconhece.",
+      "Golpistas pedem permissão para enviar avisos e depois mandam propaganda e links falsos. Em Configurações do navegador → Notificações, retire a permissão de sites que você não reconhece.",
     evidence,
   };
 }
