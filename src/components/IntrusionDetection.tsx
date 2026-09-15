@@ -51,13 +51,13 @@ export function IntrusionDetection() {
 
   const resetFingerprint = () => {
     clearBaseline();
-    toast.success("Baseline de fingerprint apagado. Rode o scan para capturar novo.");
+    toast.success("Aparelho registrado de novo. Fazendo uma nova análise.");
     runScan();
   };
 
   const resetBehavior = () => {
     resetBehaviorStats();
-    toast.success("Estatísticas comportamentais reiniciadas.");
+    toast.success("Contagem reiniciada.");
     runScan();
   };
 
@@ -66,8 +66,8 @@ export function IntrusionDetection() {
     try {
       const result = await checkClipboardHijack();
       setChecks((prev) => prev.map((c) => (c.id === "clipper" ? result : c)));
-      if (result.severity === "danger") toast.error("Clipper detectado!");
-      else if (result.severity === "safe") toast.success("Clipboard íntegro.");
+      if (result.severity === "danger") toast.error("Algo trocou o que você copiou!");
+      else if (result.severity === "safe") toast.success("O que você copia está seguro.");
     } finally {
       setTestingClipboard(false);
     }
@@ -112,17 +112,17 @@ export function IntrusionDetection() {
           
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold">Detecção de Intrusão</h2>
+              <h2 className="text-xl font-bold">Sinais de invasão</h2>
               <Badge variant="secondary" className="text-[10px] uppercase tracking-tighter">
-                Score Real
+                Nota real
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               {overallSeverity === "danger"
-                ? `${dangerCount} sinal(is) crítico(s) detectado(s).`
+                ? `${dangerCount} sinal(is) grave(s) encontrado(s).`
                 : overallSeverity === "warn"
-                ? `${warnCount} alerta(s) para revisar.`
-                : "Nenhum sinal de comprometimento detectado."}
+                ? `${warnCount} ponto(s) para você olhar com calma.`
+                : "Nada suspeito encontrado no seu aparelho."}
             </p>
           </div>
           <Button size="icon" variant="outline" onClick={runScan} disabled={scanning} className="rounded-xl">
@@ -157,7 +157,7 @@ export function IntrusionDetection() {
 
                   {check.evidence && check.evidence.length > 0 && (
                     <div className="mt-3 p-2 rounded bg-background/40 border border-border/50">
-                      <p className="text-xs font-medium mb-1 text-muted-foreground">Evidências:</p>
+                      <p className="text-xs font-medium mb-1 text-muted-foreground">O que encontramos:</p>
                       <ul className="space-y-1">
                         {check.evidence.map((e, idx) => (
                           <li key={idx} className="text-xs font-mono text-muted-foreground break-all">
@@ -177,7 +177,7 @@ export function IntrusionDetection() {
                       disabled={testingClipboard}
                     >
                       <Clipboard className="w-4 h-4 mr-2" />
-                      {testingClipboard ? "Testando..." : "Testar Clipboard"}
+                      {testingClipboard ? "Testando..." : "Testar cópia"}
                     </Button>
                   )}
 
@@ -189,7 +189,7 @@ export function IntrusionDetection() {
                       onClick={resetFingerprint}
                     >
                       <Fingerprint className="w-4 h-4 mr-2" />
-                      Recapturar baseline
+                      Registrar aparelho de novo
                     </Button>
                   )}
 
@@ -201,7 +201,7 @@ export function IntrusionDetection() {
                       onClick={resetBehavior}
                     >
                       <RotateCcw className="w-4 h-4 mr-2" />
-                      Reiniciar estatísticas
+                      Começar a contagem de novo
                     </Button>
                   )}
                 </div>
@@ -216,21 +216,19 @@ export function IntrusionDetection() {
           <Activity className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <div className="text-xs text-muted-foreground leading-relaxed space-y-2">
             <p>
-              <strong className="text-foreground">Análise A — Invasores no navegador.</strong> Verifica se algum
-              programa ou extensão está injetando conteúdo estranho na página, se algo está trocando o que você
-              copia (golpe comum com chaves Pix e carteiras) e se o seu endereço de internet está passando por um
-              intermediário suspeito.
+              <strong className="text-foreground">Parte A — Alguém mexendo no app.</strong> Vê se algum programa
+              está colocando conteúdo estranho na tela, se algo troca o que você copia (golpe comum com chave Pix
+              e carteiras) e se sua conexão está passando por alguém no meio do caminho.
             </p>
             <p>
-              <strong className="text-foreground">Análise B — Propagandas escondidas.</strong>{" "}
-              Procura Service Workers desconhecidos rodando em segundo plano e sites autorizados a te
-              enviar notificações indesejadas (adware clássico).
+              <strong className="text-foreground">Parte B — Propaganda escondida.</strong> Procura programas
+              desconhecidos rodando em segundo plano e sites autorizados a te mandar avisos indesejados.
             </p>
             <p>
-              <strong className="text-foreground">Análise C — Identidade do aparelho e comportamento.</strong>{" "}
-              Guarda uma “impressão digital” do seu aparelho (placa de vídeo, tela, som, memória) e avisa se ela
-              mudar de repente — pode ser sinal de que alguém está usando sua conta em outro lugar. Também observa
-              se cliques e digitações parecem vir de um robô ou de uma tela falsa sobreposta (phishing).
+              <strong className="text-foreground">Parte C — Seu aparelho e seu jeito de usar.</strong> Guarda as
+              características do seu celular (tela, som, memória) e avisa se mudarem de repente — pode ser sinal de
+              que alguém está usando sua conta em outro lugar. Também percebe se os toques e a digitação parecem
+              vir de um programa ou de uma tela falsa por cima.
             </p>
             <p className="opacity-70">
               Este app roda dentro do navegador e não consegue ver arquivos ou programas instalados no aparelho.

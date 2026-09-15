@@ -74,19 +74,19 @@ export async function checkDomInjection(): Promise<IntrusionCheck> {
 
   if (suspiciousScripts.length > 0 || foreignIframes.length > 2) {
     severity = "danger";
-    description = `${suspiciousScripts.length} script(s) externos e ${foreignIframes.length} iframe(s) injetados detectados.`;
+    description = `Encontramos ${suspiciousScripts.length} programa(s) de fora e ${foreignIframes.length} janela(s) escondida(s) mexendo nesta tela.`;
   } else if (extensionMarkers > 5) {
     severity = "warn";
-    description = `Muitas extensões (${extensionMarkers} marcadores) modificando a página. Revise as instaladas.`;
+    description = `Muitos complementos do navegador (${extensionMarkers} sinais) estão mexendo na tela. Confira o que você instalou.`;
   }
 
   return {
     id: "dom-injection",
-    title: "Injeção de Código no DOM",
+    title: "Alguém mexendo na tela do app",
     description,
     severity,
     details:
-      "Detecta scripts, iframes e atributos injetados por extensões maliciosas ou adware. Extensões legítimas de senha/gramática também aparecem — verifique se você reconhece as instaladas.",
+      "Procura conteúdo estranho colocado na tela por complementos do navegador ou programas de propaganda. Complementos confiáveis (de senhas ou correção de texto) também podem aparecer — confira se você reconhece todos.",
     evidence,
   };
 }
@@ -104,11 +104,11 @@ export async function checkClipboardHijack(): Promise<IntrusionCheck> {
     if (!navigator.clipboard || !window.isSecureContext) {
       return {
         id: "clipper",
-        title: "Sequestro do Clipboard (Clipper)",
-        description: "Verificação indisponível (requer HTTPS e permissão).",
+        title: "Troca do que você copia",
+        description: "Não dá para testar agora: precisa de conexão segura e da sua permissão.",
         severity: "safe",
         details:
-          "Malware 'clipper' troca endereços de carteiras cripto copiados. Para executar o teste, clique em 'Testar Clipboard' na área abaixo.",
+          "Existem vírus que trocam o que você copia (como chave Pix ou carteira de cripto) por outro destino. Toque em 'Testar cópia' para checar.",
       };
     }
 
@@ -118,11 +118,11 @@ export async function checkClipboardHijack(): Promise<IntrusionCheck> {
       // sem permissão de leitura — teste inconclusivo
       return {
         id: "clipper",
-        title: "Sequestro do Clipboard (Clipper)",
-        description: "Permissão de clipboard não concedida. Clique em 'Permitir' quando o navegador pedir.",
+        title: "Troca do que você copia",
+        description: "Falta sua permissão. Toque em 'Permitir' quando o celular perguntar.",
         severity: "warn",
         details:
-          "Este teste escreve um endereço BTC de teste no clipboard e verifica se algo o modificou.",
+          "O teste copia um texto de exemplo e confere se algo trocou esse texto.",
       };
     }
 
@@ -143,27 +143,27 @@ export async function checkClipboardHijack(): Promise<IntrusionCheck> {
       evidence.push(`Recebido: ${readBack.slice(0, 60)}`);
       return {
         id: "clipper",
-        title: "Sequestro do Clipboard (Clipper)",
-        description: "⚠️ Clipboard foi MODIFICADO após escrita. Possível malware clipper ativo.",
+        title: "Troca do que você copia",
+        description: "⚠️ O texto copiado foi trocado. Pode haver um vírus agindo no aparelho.",
         severity: "danger",
         details:
-          "O endereço escrito no clipboard voltou diferente do esperado. Malware clipper pode estar trocando endereços de carteiras cripto.",
+          "O texto voltou diferente do que foi copiado. Isso é típico de golpe que troca chave Pix ou endereço de carteira.",
         evidence,
       };
     }
 
     return {
       id: "clipper",
-      title: "Sequestro do Clipboard (Clipper)",
-      description: "Clipboard íntegro. Nenhum clipper detectado.",
+      title: "Troca do que você copia",
+      description: "O que você copia está seguro. Nada foi trocado.",
       severity: "safe",
-      details: "Teste escreveu e releu um endereço BTC — não houve modificação.",
+      details: "Copiamos um texto de exemplo e ele voltou igual.",
     };
   } catch (err) {
     return {
       id: "clipper",
-      title: "Sequestro do Clipboard (Clipper)",
-      description: "Teste inconclusivo.",
+      title: "Troca do que você copia",
+      description: "Não foi possível concluir o teste.",
       severity: "safe",
       details: String(err),
     };
@@ -200,10 +200,10 @@ export async function checkIpDivergence(): Promise<IntrusionCheck> {
   if (uniqueIps.length === 0) {
     return {
       id: "ip-divergence",
-      title: "Divergência de IP Público",
-      description: "Não foi possível consultar nenhuma fonte de IP.",
+      title: "Seu endereço na internet",
+      description: "Não conseguimos descobrir seu endereço na internet.",
       severity: "warn",
-      details: "Bloqueio de rede ou firewall corporativo pode estar interferindo.",
+      details: "A rede que você usa pode estar bloqueando essa consulta.",
       evidence,
     };
   }
@@ -211,21 +211,21 @@ export async function checkIpDivergence(): Promise<IntrusionCheck> {
   if (uniqueIps.length > 1) {
     return {
       id: "ip-divergence",
-      title: "Divergência de IP Público",
-      description: `⚠️ IPs diferentes reportados (${uniqueIps.length}). Possível proxy ou MITM ativo.`,
+      title: "Seu endereço na internet",
+      description: `⚠️ Seu endereço aparece de ${uniqueIps.length} formas diferentes. Alguém pode estar no meio da sua conexão.`,
       severity: "danger",
       details:
-        "Fontes diferentes deveriam ver o mesmo IP público. Divergência indica proxy transparente, VPN parcial ou interceptação.",
+        "Todos os testes deveriam ver o mesmo endereço. Quando muda, pode haver um intermediário espiando ou desviando sua conexão.",
       evidence,
     };
   }
 
   return {
     id: "ip-divergence",
-    title: "Divergência de IP Público",
-    description: `IP consistente entre fontes: ${uniqueIps[0]}`,
+    title: "Seu endereço na internet",
+    description: `Seu endereço na internet está estável: ${uniqueIps[0]}`,
     severity: "safe",
-    details: "Todas as fontes consultadas retornaram o mesmo IP público. Sem sinais de proxy malicioso.",
+    details: "Todos os testes viram o mesmo endereço. Nenhum sinal de intermediário suspeito.",
     evidence,
   };
 }
@@ -236,11 +236,11 @@ export async function runIntrusionScan(): Promise<IntrusionCheck[]> {
   // Clipboard requires user gesture — retorna placeholder inicial
   const clipboard: IntrusionCheck = {
     id: "clipper",
-    title: "Sequestro do Clipboard (Clipper)",
-    description: "Aguardando teste manual (requer clique).",
+    title: "Troca do que você copia",
+    description: "Toque no botão para fazer o teste.",
     severity: "safe",
     details:
-      "Malware clipper troca endereços de carteira copiados. Clique em 'Testar Clipboard' para verificar.",
+      "Alguns vírus trocam o que você copia. Toque em 'Testar cópia' para verificar.",
   };
   return [dom, clipboard, ip];
 }
