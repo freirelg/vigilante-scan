@@ -39,12 +39,12 @@ export function PowerCards() {
     if (wl.held) {
       localStorage.removeItem("wake-lock-desired");
       await releaseWakeLock();
-      toast.success("Wake Lock liberado");
+      toast.success("A tela pode apagar normalmente");
     } else {
       const r = await requestWakeLock();
       if (r.ok) {
         localStorage.setItem("wake-lock-desired", "1");
-        toast.success("Tela permanecerá ligada nesta aba");
+        toast.success("A tela vai ficar ligada enquanto o app estiver aberto");
       } else {
         toast.error(r.error ?? "Falha ao ativar");
       }
@@ -57,7 +57,7 @@ export function PowerCards() {
     toast.success(
       m === "on" ? "Modo economia ativado" :
       m === "off" ? "Modo economia desativado" :
-      "Modo automático — ativa em bateria baixa ou Save-Data"
+      "Modo automático — liga sozinho com bateria baixa"
     );
   };
 
@@ -73,11 +73,11 @@ export function PowerCards() {
     : "success";
 
   const wlLabel =
-    !wl.supported ? "Não suportado"
-    : wl.held ? "Bloqueado (ativo)"
-    : wl.playingMedia ? "Mídia mantém tela"
+    !wl.supported ? "Não disponível"
+    : wl.held ? "Tela sempre ligada"
+    : wl.playingMedia ? "Vídeo segurando a tela"
     : wl.fullscreen ? "Tela cheia"
-    : "Liberado";
+    : "Normal";
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -89,22 +89,22 @@ export function PowerCards() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <p className="font-medium text-foreground">Wake Lock (tela)</p>
+              <p className="font-medium text-foreground">Tela sempre ligada</p>
               <Badge variant="outline" className={`text-[10px] ${tone(wlTone)}`}>
                 {wlLabel}
               </Badge>
             </div>
             <p className="text-[11px] text-muted-foreground/80 mt-1">
-              O que está impedindo a tela de apagar nesta aba.
+              O que está impedindo a tela de apagar agora.
             </p>
           </div>
         </div>
 
         <div className="space-y-1.5 mb-3">
-          <SignalRow icon={<EyeOff className="w-3.5 h-3.5" />} label="Aba oculta" val={wl.visibilityBlocked} invert />
-          <SignalRow icon={<Video className="w-3.5 h-3.5" />} label="Mídia tocando" val={wl.playingMedia} />
+          <SignalRow icon={<EyeOff className="w-3.5 h-3.5" />} label="App em segundo plano" val={wl.visibilityBlocked} invert />
+          <SignalRow icon={<Video className="w-3.5 h-3.5" />} label="Vídeo ou áudio tocando" val={wl.playingMedia} />
           <SignalRow icon={<Fullscreen className="w-3.5 h-3.5" />} label="Tela cheia" val={wl.fullscreen} />
-          <SignalRow icon={<Sun className="w-3.5 h-3.5" />} label="Wake Lock ativo" val={wl.held} />
+          <SignalRow icon={<Sun className="w-3.5 h-3.5" />} label="Tela travada ligada" val={wl.held} />
         </div>
 
         {wl.reason && (
@@ -127,7 +127,7 @@ export function PowerCards() {
 
         {!wl.supported && (
           <p className="text-[10px] text-muted-foreground/70 mt-2">
-            Screen Wake Lock API não disponível (iOS Safari antigo).
+            Este navegador não permite manter a tela ligada.
           </p>
         )}
       </motion.div>
@@ -151,7 +151,7 @@ export function PowerCards() {
               </Badge>
             </div>
             <p className="text-[11px] text-muted-foreground/80 mt-1">
-              Reduz animações e transições da sessão para poupar CPU/bateria.
+              Diminui animações para gastar menos bateria.
             </p>
           </div>
         </div>
@@ -167,13 +167,13 @@ export function PowerCards() {
             </span>
           </div>
           <div className="flex items-center justify-between bg-muted/30 rounded px-2 py-1 border border-border/30">
-            <span className="text-muted-foreground">Save-Data</span>
+            <span className="text-muted-foreground">Economia de dados</span>
             <span className={"font-mono " + (ps.saveDataHint ? "text-warning" : "text-foreground")}>
               {ps.saveDataHint ? "sim" : "não"}
             </span>
           </div>
           <div className="flex items-center justify-between bg-muted/30 rounded px-2 py-1 border border-border/30">
-            <span className="text-muted-foreground">Reduzir movimento</span>
+            <span className="text-muted-foreground">Menos animação</span>
             <span className={"font-mono " + (ps.reducedMotion ? "text-warning" : "text-foreground")}>
               {ps.reducedMotion ? "sim" : "não"}
             </span>
@@ -181,7 +181,7 @@ export function PowerCards() {
         </div>
 
         <p className="text-[11px] text-muted-foreground mb-2">
-          Modo: <strong className="text-foreground">{ps.mode.toUpperCase()}</strong> — {ps.reason}
+          Modo: <strong className="text-foreground">{ps.mode === "auto" ? "AUTOMÁTICO" : ps.mode === "on" ? "LIGADO" : "DESLIGADO"}</strong> — {ps.reason}
         </p>
 
         <div className="grid grid-cols-3 gap-1.5">
@@ -212,8 +212,8 @@ export function PowerCards() {
         </div>
 
         <p className="text-[10px] text-muted-foreground/70 mt-3 leading-relaxed">
-          <strong>Auto</strong> ativa quando bateria ≤ 20% descarregando, <code>Save-Data</code> ligado,
-          ou <code>prefers-reduced-motion</code> do sistema.
+          No modo <strong>automático</strong>, a economia liga sozinha quando a bateria cai de 20%, quando o celular
+          está economizando dados ou quando você pediu menos animação nas configurações.
         </p>
       </motion.div>
     </div>

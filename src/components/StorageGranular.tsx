@@ -35,25 +35,25 @@ export function StorageGranular() {
     const ok = await deleteIndexedDb(name);
     setBusyName(null);
     if (ok) {
-      toast.success(`Base "${name}" removida`);
+      toast.success(`Dados de "${name}" apagados`);
       refresh();
     } else {
-      toast.error(`Falha ao remover "${name}" — pode estar em uso`);
+      toast.error(`Não deu para apagar "${name}" — pode estar em uso`);
     }
   };
 
   const onDeleteCookie = (name: string) => {
     deleteCookie(name);
-    toast.success(`Cookie "${name}" removido`);
+    toast.success(`Registro "${name}" apagado`);
     refresh();
   };
 
   const onClearNonEssential = () => {
     const { removed, freed } = clearNonEssentialCookies();
     if (removed === 0) {
-      toast.info("Nenhum cookie não-essencial encontrado");
+      toast.info("Nada dispensável para apagar");
     } else {
-      toast.success(`${removed} cookie(s) removido(s) — ${formatBytes(freed)} liberados`);
+      toast.success(`${removed} registro(s) apagado(s) — ${formatBytes(freed)} liberados`);
     }
     refresh();
   };
@@ -68,13 +68,13 @@ export function StorageGranular() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <p className="font-medium text-foreground">IndexedDB</p>
+              <p className="font-medium text-foreground">Dados guardados no aparelho</p>
               <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
-                {dbs.length} base(s)
+                {dbs.length} conjunto(s)
               </Badge>
             </div>
             <p className="text-[11px] text-muted-foreground/80 mt-1">
-              Bases locais criadas por este site. Remova individualmente.
+              Informações que o app salvou no seu celular. Você pode apagar uma a uma.
             </p>
           </div>
           <Button variant="ghost" size="icon" onClick={refresh} disabled={loading} className="h-8 w-8">
@@ -84,12 +84,12 @@ export function StorageGranular() {
 
         {!idbSupported ? (
           <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg p-3">
-            API <code>indexedDB.databases()</code> não suportada neste navegador (Safari/Firefox).
+            Este navegador não deixa listar esses dados.
           </p>
         ) : dbs.length === 0 ? (
           <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg p-3 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-success" />
-            Nenhuma base IndexedDB encontrada.
+            Nenhum dado guardado por aqui.
           </p>
         ) : (
           <div className="space-y-2">
@@ -135,13 +135,13 @@ export function StorageGranular() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <p className="font-medium text-foreground">Cookies (1ª parte)</p>
+              <p className="font-medium text-foreground">Registros deste app</p>
               <Badge variant="outline" className="text-[10px] border-warning/40 text-warning">
                 {cookies?.count ?? 0} • {cookies ? formatBytes(cookies.totalSize) : "—"}
               </Badge>
             </div>
             <p className="text-[11px] text-muted-foreground/80 mt-1">
-              Apenas cookies acessíveis via JS (sem <code>HttpOnly</code>).
+              Pequenos registros que o app deixa salvos no navegador.
             </p>
           </div>
         </div>
@@ -155,7 +155,7 @@ export function StorageGranular() {
               </p>
             </div>
             <div className="bg-warning/10 border border-warning/30 rounded-lg p-2">
-              <p className="text-[10px] text-muted-foreground">Não-essenciais</p>
+              <p className="text-[10px] text-muted-foreground">Dispensáveis</p>
               <p className="text-sm font-semibold text-warning flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 {cookies.nonEssentialCount} • {formatBytes(cookies.nonEssentialSize)}
@@ -167,7 +167,7 @@ export function StorageGranular() {
         {cookies && cookies.count === 0 ? (
           <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg p-3 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-success" />
-            Nenhum cookie acessível encontrado.
+            Nenhum registro encontrado.
           </p>
         ) : (
           <>
@@ -189,7 +189,7 @@ export function StorageGranular() {
                 disabled={!cookies || cookies.nonEssentialCount === 0}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Limpar não-essenciais
+                Limpar dispensáveis
               </Button>
             </div>
 
@@ -223,7 +223,7 @@ export function StorageGranular() {
                         className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => onDeleteCookie(c.name)}
                         disabled={c.essential}
-                        title={c.essential ? "Cookie essencial — não removido" : "Remover"}
+                        title={c.essential ? "Necessário para o app funcionar" : "Apagar"}
                       >
                         <X className="w-3.5 h-3.5" />
                       </Button>
@@ -236,8 +236,8 @@ export function StorageGranular() {
         )}
 
         <p className="text-[10px] text-muted-foreground/70 mt-3 leading-relaxed">
-          <strong>Nota:</strong> cookies <code>HttpOnly</code> (sessão do servidor) não são
-          visíveis via JavaScript e não aparecem aqui — por design de segurança.
+          <strong>Observação:</strong> registros protegidos que guardam seu login não aparecem aqui,
+          justamente por segurança.
         </p>
       </motion.div>
     </div>

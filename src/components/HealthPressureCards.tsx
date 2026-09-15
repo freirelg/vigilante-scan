@@ -42,9 +42,9 @@ export function HealthPressureCards() {
     setBusy("update");
     const r = await forceSwUpdate();
     setBusy(null);
-    if (!r.ok) toast.error("Nenhum Service Worker registrado para atualizar");
-    else if (r.hadWaiting) toast.success("SKIP_WAITING enviado — recarregue para ativar");
-    else toast.success("Update solicitado — nenhuma nova versão pendente");
+    if (!r.ok) toast.error("Não há nada para atualizar agora");
+    else if (r.hadWaiting) toast.success("Nova versão pronta — recarregue para usar");
+    else toast.success("Tudo já está na versão mais recente");
     refresh();
   };
 
@@ -52,8 +52,8 @@ export function HealthPressureCards() {
     setBusy("unregister");
     const ok = await unregisterSw();
     setBusy(null);
-    if (ok) toast.success("Service Worker desregistrado");
-    else toast.error("Não foi possível desregistrar");
+    if (ok) toast.success("Proteção em segundo plano desligada");
+    else toast.error("Não foi possível desligar");
     refresh();
   };
 
@@ -70,12 +70,12 @@ export function HealthPressureCards() {
     : "text-destructive bg-destructive/10 border-destructive/30";
 
   const swLabel =
-    !sw?.supported ? "Não suportado"
-    : !sw.registered ? "Não registrado"
-    : sw.stuck ? "Travado"
-    : sw.hasWaiting ? "Update pendente"
-    : sw.hasController ? "Ativo"
-    : "Sem controller";
+    !sw?.supported ? "Não disponível"
+    : !sw.registered ? "Desligada"
+    : sw.stuck ? "Travada"
+    : sw.hasWaiting ? "Atualização pendente"
+    : sw.hasController ? "Ativa"
+    : "Ainda iniciando";
 
   // ---- Memory ----
   const memTone: "success" | "warning" | "destructive" =
@@ -104,25 +104,25 @@ export function HealthPressureCards() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <p className="font-medium text-foreground">Service Worker</p>
+              <p className="font-medium text-foreground">Proteção em segundo plano</p>
               <Badge variant="outline" className={`text-[10px] ${tone(swTone)}`}>
                 {swLabel}
               </Badge>
             </div>
             <p className="text-[11px] text-muted-foreground/80 mt-1 truncate">
-              {sw?.scriptUrl ? new URL(sw.scriptUrl).pathname : "Sem script registrado"}
+              {sw?.scriptUrl ? new URL(sw.scriptUrl).pathname : "Nada rodando agora"}
             </p>
           </div>
         </div>
 
         {sw?.supported && (
           <div className="grid grid-cols-2 gap-1.5 text-[11px] mb-3">
-            <Row label="Escopo" value={sw.scope ? new URL(sw.scope).pathname : "—"} />
-            <Row label="Estado" value={sw.state ?? "—"} />
-            <Row label="Controller" value={sw.hasController ? "sim" : "não"} good={sw.hasController} />
+            <Row label="Área" value={sw.scope ? new URL(sw.scope).pathname : "—"} />
+            <Row label="Situação" value={sw.state ?? "—"} />
+            <Row label="No comando" value={sw.hasController ? "sim" : "não"} good={sw.hasController} />
             <Row label="Aguardando" value={sw.hasWaiting ? "sim" : "não"} bad={sw.hasWaiting} />
             <Row label="Instalando" value={sw.hasInstalling ? "sim" : "não"} />
-            <Row label="Cache" value={sw.updateViaCache ?? "—"} />
+            <Row label="Dados salvos" value={sw.updateViaCache ?? "—"} />
           </div>
         )}
 
@@ -146,7 +146,7 @@ export function HealthPressureCards() {
             ) : (
               <Zap className="w-3.5 h-3.5" />
             )}
-            Forçar update
+            Atualizar agora
           </Button>
           <Button
             variant="outline"
@@ -160,7 +160,7 @@ export function HealthPressureCards() {
             ) : (
               <PowerOff className="w-3.5 h-3.5" />
             )}
-            Desregistrar
+            Desligar
           </Button>
         </div>
       </motion.div>
@@ -178,13 +178,13 @@ export function HealthPressureCards() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <p className="font-medium text-foreground">Pressão de Memória</p>
+              <p className="font-medium text-foreground">Uso de memória</p>
               <Badge variant="outline" className={`text-[10px] ${tone(memTone)}`}>
                 {memLabel} {mem?.usagePct != null ? `• ${mem.usagePct.toFixed(0)}%` : ""}
               </Badge>
             </div>
             <p className="text-[11px] text-muted-foreground/80 mt-1">
-              Heap JS desta aba (Chrome/Edge). Amostrado a cada 3s.
+              Memória que o app está usando agora. Atualiza a cada 3 segundos.
             </p>
           </div>
         </div>
@@ -205,13 +205,13 @@ export function HealthPressureCards() {
             </div>
             <div className="grid grid-cols-3 gap-1.5 text-[11px]">
               <Row label="Usado" value={formatBytes(mem.usedBytes ?? 0)} />
-              <Row label="Alocado" value={formatBytes(mem.totalBytes ?? 0)} />
+              <Row label="Reservado" value={formatBytes(mem.totalBytes ?? 0)} />
               <Row label="Limite" value={formatBytes(mem.limitBytes ?? 0)} />
             </div>
           </>
         ) : (
           <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg p-3">
-            <code>performance.memory</code> não disponível (Firefox/Safari) — heap não medível.
+            Este navegador não informa o uso de memória do app.
           </p>
         )}
 
@@ -223,28 +223,28 @@ export function HealthPressureCards() {
           )}
           {mem?.hardwareConcurrency != null && (
             <Badge variant="outline" className="text-[10px]">
-              {mem.hardwareConcurrency} threads
+              {mem.hardwareConcurrency} núcleos
             </Badge>
           )}
           {mem?.wasDiscarded ? (
             <Badge variant="outline" className="text-[10px] border-warning/40 text-warning">
-              <AlertTriangle className="w-3 h-3 mr-1" /> Aba foi descartada antes
+              <AlertTriangle className="w-3 h-3 mr-1" /> App já foi fechado por falta de memória
             </Badge>
           ) : (
             <Badge variant="outline" className="text-[10px] border-success/40 text-success">
-              <CheckCircle2 className="w-3 h-3 mr-1" /> Aba não descartada
+              <CheckCircle2 className="w-3 h-3 mr-1" /> App rodando sem interrupções
             </Badge>
           )}
         </div>
 
         {mem?.level === "crit" && (
           <p className="text-[11px] text-destructive mt-2">
-            ⚠ Heap acima de 90% — risco de crash. Feche abas pesadas ou recarregue.
+            ⚠ Memória quase no limite — o app pode fechar sozinho. Feche outras abas ou recarregue.
           </p>
         )}
         {mem?.level === "warn" && (
           <p className="text-[11px] text-warning mt-2">
-            Heap acima de 80% — considere recarregar para liberar memória.
+            Memória alta — vale recarregar o app para liberar espaço.
           </p>
         )}
       </motion.div>
