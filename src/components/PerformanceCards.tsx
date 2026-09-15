@@ -38,9 +38,9 @@ export function PerformanceCards() {
   const inpT = rateInp(vitals.inp);
 
   const vitalItems = [
-    { id: "lcp", label: "LCP", full: "Largest Contentful Paint", value: vitals.lcp != null ? `${(vitals.lcp / 1000).toFixed(2)}s` : "…", tone: lcpT, icon: Gauge, hint: "≤ 2.5s bom" },
-    { id: "inp", label: "INP", full: "Interaction to Next Paint", value: vitals.inp != null ? `${vitals.inp} ms` : "…", tone: inpT, icon: MousePointerClick, hint: "≤ 200ms bom" },
-    { id: "cls", label: "CLS", full: "Cumulative Layout Shift", value: vitals.cls != null ? vitals.cls.toFixed(3) : "…", tone: clsT, icon: MoveVertical, hint: "≤ 0.10 bom" },
+    { id: "lcp", label: "Abertura", full: "Tempo até a tela aparecer", value: vitals.lcp != null ? `${(vitals.lcp / 1000).toFixed(2)}s` : "…", tone: lcpT, icon: Gauge, hint: "até 2,5s é bom" },
+    { id: "inp", label: "Resposta ao toque", full: "Tempo de resposta ao toque", value: vitals.inp != null ? `${vitals.inp} ms` : "…", tone: inpT, icon: MousePointerClick, hint: "até 200ms é bom" },
+    { id: "cls", label: "Tela pulando", full: "Quanto a tela se mexe sozinha", value: vitals.cls != null ? vitals.cls.toFixed(3) : "…", tone: clsT, icon: MoveVertical, hint: "até 0,10 é bom" },
   ];
 
   return (
@@ -54,9 +54,9 @@ export function PerformanceCards() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-primary" />
-            <h4 className="text-sm font-semibold text-foreground">Web Vitals ao vivo</h4>
+            <h4 className="text-sm font-semibold text-foreground">Velocidade do app agora</h4>
           </div>
-          <Badge variant="outline" className="text-[10px] border-success/40 text-success">REAL</Badge>
+          <Badge variant="outline" className="text-[10px] border-success/40 text-success">AO VIVO</Badge>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -77,11 +77,11 @@ export function PerformanceCards() {
         </div>
 
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-          <span>FCP: <span className="text-foreground tabular-nums">{vitals.fcp != null ? `${(vitals.fcp / 1000).toFixed(2)}s` : "—"}</span></span>
-          <span>TTFB: <span className="text-foreground tabular-nums">{vitals.ttfb != null ? `${vitals.ttfb} ms` : "—"}</span></span>
+          <span>Primeiro conteúdo: <span className="text-foreground tabular-nums">{vitals.fcp != null ? `${(vitals.fcp / 1000).toFixed(2)}s` : "—"}</span></span>
+          <span>Resposta do servidor: <span className="text-foreground tabular-nums">{vitals.ttfb != null ? `${vitals.ttfb} ms` : "—"}</span></span>
         </div>
         <p className="text-[10px] text-muted-foreground/70 mt-2">
-          Medido nesta sessão via <strong className="text-foreground">PerformanceObserver</strong> — atualiza automaticamente conforme você interage.
+          Medido no seu aparelho enquanto você usa o app — os números se atualizam sozinhos.
         </p>
       </motion.div>
 
@@ -95,7 +95,7 @@ export function PerformanceCards() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <FileWarning className="w-4 h-4 text-primary" />
-            <h4 className="text-sm font-semibold text-foreground">Recursos mais pesados</h4>
+            <h4 className="text-sm font-semibold text-foreground">O que mais pesa no app</h4>
           </div>
           <Button size="sm" variant="ghost" onClick={refresh} className="h-7 px-2 text-xs">
             <RefreshCw className="w-3 h-3 mr-1" />
@@ -106,24 +106,24 @@ export function PerformanceCards() {
         <div className="grid grid-cols-3 gap-2 mb-3">
           <div className="rounded-lg border border-border bg-muted/30 p-2 text-center">
             <div className="text-lg font-bold tabular-nums text-foreground">{res.total}</div>
-            <div className="text-[10px] text-muted-foreground">requisições</div>
+            <div className="text-[10px] text-muted-foreground">itens carregados</div>
           </div>
           <div className="rounded-lg border border-border bg-muted/30 p-2 text-center">
             <div className="text-lg font-bold tabular-nums text-foreground">{formatBytes(res.totalBytes)}</div>
-            <div className="text-[10px] text-muted-foreground">transferidos</div>
+            <div className="text-[10px] text-muted-foreground">de dados usados</div>
           </div>
           <div className="rounded-lg border border-border bg-muted/30 p-2 text-center">
             <div className="text-lg font-bold tabular-nums text-success flex items-center justify-center gap-1">
               <Database className="w-3.5 h-3.5" />
               {res.cachedCount}
             </div>
-            <div className="text-[10px] text-muted-foreground">em cache</div>
+            <div className="text-[10px] text-muted-foreground">já guardados</div>
           </div>
         </div>
 
         {res.top.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-3">
-            Nenhum recurso com peso mensurável (headers `Timing-Allow-Origin` podem estar ausentes).
+            Não deu para medir o peso dos itens carregados agora.
           </p>
         ) : (
           <div className="space-y-1.5">
@@ -148,7 +148,7 @@ export function PerformanceCards() {
           </div>
         )}
         <p className="text-[10px] text-muted-foreground/70 mt-3">
-          Fonte: <strong className="text-foreground">performance.getEntriesByType("resource")</strong> — top 5 por bytes transferidos nesta sessão.
+          Os 5 itens que mais consumiram dados desde que você abriu o app.
         </p>
       </motion.div>
     </div>

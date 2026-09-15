@@ -96,10 +96,10 @@ export function DeviceOptimizer() {
       freed += before;
       // Also try to clear localStorage of non-critical keys? Skip to preserve app state.
       setFreedBytes((prev) => prev + freed);
-      toast.success(`${removed} cache(s) limpos — ${formatBytes(freed)} liberados`);
+      toast.success(`Limpeza feita — ${formatBytes(freed)} liberados`);
       await refresh();
     } catch {
-      toast.error("Falha ao limpar caches");
+      toast.error("Não foi possível limpar agora");
     } finally {
       setOptimizing(false);
     }
@@ -107,18 +107,18 @@ export function DeviceOptimizer() {
 
   const requestPersistent = async () => {
     if (!navigator.storage?.persist) {
-      toast.error("Não suportado neste navegador");
+      toast.error("Este navegador não permite essa opção");
       return;
     }
     const granted = await navigator.storage.persist();
-    if (granted) toast.success("Armazenamento marcado como persistente");
-    else toast.warning("Navegador não concedeu persistência");
+    if (granted) toast.success("Seus dados do app ficam protegidos de limpeza automática");
+    else toast.warning("O navegador não autorizou proteger esses dados");
   };
 
   const metrics: MetricRow[] = [
     {
       id: "storage",
-      name: "Armazenamento do App",
+      name: "Espaço usado pelo app",
       icon: <HardDrive className="w-5 h-5" />,
       used: storage?.usage ?? 0,
       total: storage?.quota ?? 0,
@@ -126,11 +126,11 @@ export function DeviceOptimizer() {
       totalLabel: storage ? formatBytes(storage.quota) : "—",
       percentage: storage?.usagePct ?? 0,
       supported: storage?.supported ?? false,
-      note: "Quota real disponibilizada pelo navegador ao app",
+      note: "Espaço que o navegador reservou para este app",
     },
     {
       id: "cache",
-      name: "Cache do Service Worker",
+      name: "Arquivos temporários",
       icon: <Trash2 className="w-5 h-5" />,
       used: cache?.cacheSize ?? 0,
       total: storage?.quota ?? 0,
@@ -138,11 +138,11 @@ export function DeviceOptimizer() {
       totalLabel: `${cache?.cacheCount ?? 0} cache(s)`,
       percentage: storage?.quota ? ((cache?.cacheSize ?? 0) / storage.quota) * 100 : 0,
       supported: true,
-      note: "Pode ser limpo com segurança",
+      note: "Pode apagar sem risco",
     },
     {
       id: "ls",
-      name: "LocalStorage",
+      name: "Preferências salvas",
       icon: <Database className="w-5 h-5" />,
       used: cache?.localStorageSize ?? 0,
       total: 5 * 1024 * 1024, // ~5MB típico
@@ -150,14 +150,14 @@ export function DeviceOptimizer() {
       totalLabel: "~5 MB",
       percentage: cache ? ((cache.localStorageSize) / (5 * 1024 * 1024)) * 100 : 0,
       supported: true,
-      note: `${cache?.indexedDbCount ?? 0} base(s) IndexedDB`,
+      note: `${cache?.indexedDbCount ?? 0} conjunto(s) de dados guardados`,
     },
   ];
 
   if (memory?.deviceMemoryGb || memory?.jsHeapUsed) {
     metrics.unshift({
       id: "ram",
-      name: memory.deviceMemoryGb ? "Memória do Dispositivo" : "Heap JavaScript",
+      name: memory.deviceMemoryGb ? "Memória do aparelho" : "Memória em uso pelo app",
       icon: <Cpu className="w-5 h-5" />,
       used: memory.jsHeapUsed ?? 0,
       total: memory.jsHeapLimit ?? (memory.deviceMemoryGb ?? 0) * 1024 * 1024 * 1024,
@@ -165,7 +165,7 @@ export function DeviceOptimizer() {
       totalLabel: memory.deviceMemoryGb ? `${memory.deviceMemoryGb} GB total` : formatBytes(memory.jsHeapLimit ?? 0),
       percentage: memory.jsHeapUsed && memory.jsHeapLimit ? (memory.jsHeapUsed / memory.jsHeapLimit) * 100 : 0,
       supported: true,
-      note: memory.deviceMemoryGb ? "Aproximado (Device Memory API)" : "Heap JS (Chrome)",
+      note: memory.deviceMemoryGb ? "Valor aproximado informado pelo aparelho" : "Memória usada por este app",
     });
   }
 
@@ -201,8 +201,8 @@ export function DeviceOptimizer() {
           </>
         ) : (
           <>
-            <h3 className="text-2xl font-bold text-foreground mb-1">Análise Real do Aparelho</h3>
-            <p className="text-muted-foreground">Dados do navegador via Storage API</p>
+            <h3 className="text-2xl font-bold text-foreground mb-1">Situação real do aparelho</h3>
+            <p className="text-muted-foreground">Números medidos no seu celular agora</p>
           </>
         )}
       </motion.div>
@@ -215,9 +215,8 @@ export function DeviceOptimizer() {
       >
         <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Valores obtidos em tempo real via <strong className="text-foreground">navigator.storage.estimate()</strong>,{" "}
-          <strong className="text-foreground">Cache API</strong> e{" "}
-          <strong className="text-foreground">Device Memory API</strong>. Limitados ao contexto do navegador (não ao SO).
+          Os números são medidos no seu celular neste momento. Eles mostram o que o app consegue enxergar —
+          arquivos e programas do sistema ficam fora do alcance.
         </p>
       </motion.div>
 
@@ -287,9 +286,9 @@ export function DeviceOptimizer() {
           className="w-full"
         >
           {optimizing ? (
-            <><RefreshCw className="w-5 h-5 animate-spin" />Limpando caches...</>
+            <><RefreshCw className="w-5 h-5 animate-spin" />Limpando...</>
           ) : (
-            <><Zap className="w-5 h-5" />Limpar Cache do Navegador</>
+            <><Zap className="w-5 h-5" />Limpar arquivos temporários</>
           )}
         </Button>
 
@@ -298,7 +297,7 @@ export function DeviceOptimizer() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />Atualizar
           </Button>
           <Button variant="outline" onClick={requestPersistent}>
-            <HardDrive className="w-4 h-4" />Persistir
+            <HardDrive className="w-4 h-4" />Proteger dados
           </Button>
         </div>
       </div>
@@ -322,13 +321,13 @@ function LiveNetworkBattery({
 
   const netQuality: { label: string; tone: "success" | "warning" | "destructive"; tip: string } =
     !online
-      ? { label: "Offline", tone: "destructive", tip: "Sem conexão — funcionalidades online desativadas." }
+      ? { label: "Offline", tone: "destructive", tip: "Sem internet — algumas partes do app não funcionam." }
       : eff === "4g" && (rtt == null || rtt < 200)
-      ? { label: "Rápida", tone: "success", tip: "Conexão saudável para tráfego pesado." }
+      ? { label: "Rápida", tone: "success", tip: "Conexão boa para tudo, inclusive vídeos." }
       : eff === "3g" || (rtt != null && rtt >= 200 && rtt < 500)
-      ? { label: "Moderada", tone: "warning", tip: "Ative Save-Data e evite streams em alta qualidade." }
+      ? { label: "Moderada", tone: "warning", tip: "Evite vídeos em alta qualidade para não travar." }
       : eff === "2g" || eff === "slow-2g" || (rtt != null && rtt >= 500)
-      ? { label: "Lenta", tone: "destructive", tip: "Latência alta — considere ativar modo economia de dados." }
+      ? { label: "Lenta", tone: "destructive", tip: "A internet está demorando. Vale ligar a economia de dados." }
       : { label: "Ativa", tone: "success", tip: "Conexão detectada." };
 
   const toneClass = (tone: "success" | "warning" | "destructive") =>
@@ -357,14 +356,14 @@ function LiveNetworkBattery({
 
   const batTip =
     battery?.supported === false
-      ? "Battery API não disponível neste navegador (iOS/Firefox)."
+      ? "Este navegador não informa o nível da bateria."
       : charging
       ? battery?.chargingTimeSec
         ? `Carregando — ${formatDuration(battery.chargingTimeSec)} até 100%`
         : "Carregando"
       : battery?.dischargingTimeSec
       ? `Descarregando — ${formatDuration(battery.dischargingTimeSec)} restantes`
-      : "Modo descarga";
+      : "Em uso, sem carregador";
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -391,17 +390,17 @@ function LiveNetworkBattery({
                 {eff ? eff.toUpperCase() : "—"}
               </span>
               <span className="tabular-nums">↓ {dl != null ? `${dl.toFixed(1)} Mbps` : "—"}</span>
-              <span className="tabular-nums">RTT {rtt != null ? `${rtt} ms` : "—"}</span>
+              <span className="tabular-nums">Resposta {rtt != null ? `${rtt} ms` : "—"}</span>
             </div>
             {network?.saveData && (
               <Badge variant="outline" className="mt-2 text-[10px] border-primary/40 text-primary">
-                Save-Data ativo
+                Economia de dados ligada
               </Badge>
             )}
             <p className="text-[11px] text-muted-foreground/80 mt-2">{netQuality.tip}</p>
             {!network?.supported && (
               <p className="text-[10px] text-muted-foreground/60 mt-1">
-                Network Information API não suportada — dados limitados.
+                Este navegador informa poucos detalhes sobre a conexão.
               </p>
             )}
           </div>
@@ -444,7 +443,7 @@ function LiveNetworkBattery({
             </p>
             {level != null && !charging && level < 20 && (
               <p className="text-[11px] text-destructive mt-1">
-                ⚠ Bateria crítica — ative modo economia do sistema.
+                ⚠ Bateria muito baixa — ligue a economia de energia do celular.
               </p>
             )}
           </div>
