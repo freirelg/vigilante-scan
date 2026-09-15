@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { DeviceProtections } from "@/components/DeviceProtections";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Wifi,
@@ -745,6 +746,8 @@ export function NetworkSecurity() {
 
   return (
     <div className="space-y-6">
+      <DeviceProtections />
+
       {/* Connection Map (Melhoria 5) */}
       <motion.div
         className="glass-card p-6 overflow-hidden relative"
