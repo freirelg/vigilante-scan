@@ -51,13 +51,13 @@ export function IntrusionDetection() {
 
   const resetFingerprint = () => {
     clearBaseline();
-    toast.success("Baseline de fingerprint apagado. Rode o scan para capturar novo.");
+    toast.success("Aparelho registrado de novo. Fazendo uma nova análise.");
     runScan();
   };
 
   const resetBehavior = () => {
     resetBehaviorStats();
-    toast.success("Estatísticas comportamentais reiniciadas.");
+    toast.success("Contagem reiniciada.");
     runScan();
   };
 
@@ -66,8 +66,8 @@ export function IntrusionDetection() {
     try {
       const result = await checkClipboardHijack();
       setChecks((prev) => prev.map((c) => (c.id === "clipper" ? result : c)));
-      if (result.severity === "danger") toast.error("Clipper detectado!");
-      else if (result.severity === "safe") toast.success("Clipboard íntegro.");
+      if (result.severity === "danger") toast.error("Algo trocou o que você copiou!");
+      else if (result.severity === "safe") toast.success("O que você copia está seguro.");
     } finally {
       setTestingClipboard(false);
     }
