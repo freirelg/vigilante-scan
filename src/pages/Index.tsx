@@ -51,6 +51,8 @@ const Index = () => {
         return <PasswordAnalyzer />;
       case "network":
         return <NetworkSecurity />;
+      case "protections":
+        return <ProtectionsScreen />;
       case "history":
         return <ScanHistory />;
       case "install":
@@ -72,6 +74,8 @@ const Index = () => {
         return "Analisador de Senhas";
       case "network":
         return "Segurança de Rede";
+      case "protections":
+        return "Proteções Ativas";
       case "history":
         return "Histórico de Scans";
       case "install":
