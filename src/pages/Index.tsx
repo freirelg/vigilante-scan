@@ -6,6 +6,7 @@ import { IntrusionDetection } from "@/components/IntrusionDetection";
 import { DeviceOptimizer } from "@/components/DeviceOptimizer";
 import { PasswordAnalyzer } from "@/components/PasswordAnalyzer";
 import { NetworkSecurity } from "@/components/NetworkSecurity";
+import { ProtectionsScreen } from "@/components/ProtectionsScreen";
 import { VulnerabilityScore } from "@/components/VulnerabilityScore";
 import { ScanHistory } from "@/components/ScanHistory";
 import { BottomNav } from "@/components/BottomNav";
