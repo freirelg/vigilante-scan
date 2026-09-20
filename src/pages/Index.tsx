@@ -6,6 +6,7 @@ import { IntrusionDetection } from "@/components/IntrusionDetection";
 import { DeviceOptimizer } from "@/components/DeviceOptimizer";
 import { PasswordAnalyzer } from "@/components/PasswordAnalyzer";
 import { NetworkSecurity } from "@/components/NetworkSecurity";
+import { ProtectionsScreen } from "@/components/ProtectionsScreen";
 import { VulnerabilityScore } from "@/components/VulnerabilityScore";
 import { ScanHistory } from "@/components/ScanHistory";
 import { BottomNav } from "@/components/BottomNav";
@@ -50,6 +51,8 @@ const Index = () => {
         return <PasswordAnalyzer />;
       case "network":
         return <NetworkSecurity />;
+      case "protections":
+        return <ProtectionsScreen />;
       case "history":
         return <ScanHistory />;
       case "install":
@@ -71,6 +74,8 @@ const Index = () => {
         return "Analisador de Senhas";
       case "network":
         return "Segurança de Rede";
+      case "protections":
+        return "Proteções Ativas";
       case "history":
         return "Histórico de Scans";
       case "install":

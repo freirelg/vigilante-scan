@@ -4,9 +4,9 @@ import { ShieldCheck, ShieldAlert, ShieldQuestion, RefreshCw, Lock, EyeOff, Cook
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-type State = "on" | "off" | "unknown";
+export type State = "on" | "off" | "unknown";
 
-interface Protection {
+export interface Protection {
   id: string;
   name: string;
   icon: React.ReactNode;
@@ -15,7 +15,7 @@ interface Protection {
   tip: string;
 }
 
-async function detectProtections(): Promise<Protection[]> {
+export async function detectProtections(): Promise<Protection[]> {
   const nav = navigator as Navigator & {
     globalPrivacyControl?: boolean;
     cookieDeprecationLabel?: { getValue: () => Promise<string> };

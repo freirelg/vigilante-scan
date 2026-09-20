@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Zap, Lock, Wifi, Gauge, History, ShieldAlert, Lock as LockIcon } from "lucide-react";
+import { Zap, Lock, Wifi, Gauge, History, ShieldAlert, ShieldCheck, Lock as LockIcon } from "lucide-react";
 import { isPremiumTab } from "@/lib/edition";
 
 interface BottomNavProps {
@@ -13,6 +13,7 @@ const tabs = [
   { id: "optimize", label: "Otimizar", icon: Zap },
   { id: "password", label: "Senhas", icon: Lock },
   { id: "network", label: "Rede", icon: Wifi },
+  { id: "protections", label: "Proteções", icon: ShieldCheck },
   { id: "history", label: "Histórico", icon: History },
 ];
 
