@@ -6,12 +6,6 @@ export const START_SCAN_LIMIT = 30;
 export const INTERMEDIATE_SCAN_LIMIT = 50;
 
 const KEY_USED = "freirenet_start_scans_used_v2";
-const KEY_LEVEL = "freirenet_access_level_v2"; // 0: 30 scans, 1: 50 scans, 2: Unlimited
-
-export const UNLOCK_CODES = {
-  level50: "FreireNet50",
-  full: "FreireNetLivre999",
-} as const;
 
 export function getScansUsed(): number {
   try {
@@ -22,13 +16,10 @@ export function getScansUsed(): number {
   }
 }
 
+// Access levels must not be restored from localStorage: users can edit browser storage.
+// Until a server-side licensing endpoint is deployed, all sessions remain on Start.
 export function getAccessLevel(): number {
-  try {
-    const v = parseInt(localStorage.getItem(KEY_LEVEL) ?? "0", 10);
-    return Number.isFinite(v) && v >= 0 ? v : 0;
-  } catch {
-    return 0;
-  }
+  return 0;
 }
 
 export function getScanLimit(): number {
@@ -39,7 +30,7 @@ export function getScanLimit(): number {
 }
 
 export function isUnlocked(): boolean {
-  return getAccessLevel() >= 2;
+  return false;
 }
 
 export function incrementScan(): number {
@@ -58,7 +49,7 @@ export function resetScans(): void {
   } catch {}
 }
 
-// Limite de scans reativado conforme solicitado
+// Limite local de interface; não deve ser usado como controle de cobrança.
 export const SCAN_LIMIT_ENABLED = true;
 
 export function scansRemaining(): number {
@@ -77,48 +68,27 @@ export function isBlocked(): boolean {
 }
 
 // Which tabs are premium (locked in Start edition)
-// Level 0 (up to 30 scans): Only "score" and "history"
-// Level 1 (up to 50 scans): "score", "history", "intrusion"
-// Level 2 (Unlimited): All tabs
 export const PREMIUM_TABS = new Set(["intrusion", "optimize", "password", "network"]);
 
 export function isPremiumTab(tabId: string): boolean {
   if (EDITION !== "start") return false;
   const level = getAccessLevel();
   if (level >= 2) return false;
-  
+
   if (level === 1) {
-    // Only block optimize, password, network
     return ["optimize", "password", "network"].includes(tabId);
   }
-  
-  // Level 0: block intrusion, optimize, password, network
+
   return ["intrusion", "optimize", "password", "network"].includes(tabId);
 }
 
-export type RedeemResult =
-  | { ok: true; kind: "level50" | "full"; message: string }
-  | { ok: false; message: string };
+export type RedeemResult = { ok: false; message: string };
 
-export function redeemCode(code: string): RedeemResult {
-  const trimmed = (code ?? "").trim();
-  if (!trimmed) return { ok: false, message: "Digite uma senha." };
-  
-  if (trimmed === UNLOCK_CODES.full) {
-    try {
-      localStorage.setItem(KEY_LEVEL, "2");
-      window.dispatchEvent(new Event("freirenet-usage-updated"));
-    } catch {}
-    return { ok: true, kind: "full", message: "Acesso livre liberado! Todos os recursos desbloqueados." };
-  }
-  
-  if (trimmed === UNLOCK_CODES.level50) {
-    try {
-      localStorage.setItem(KEY_LEVEL, "1");
-      window.dispatchEvent(new Event("freirenet-usage-updated"));
-    } catch {}
-    return { ok: true, kind: "level50", message: "Limite estendido para 50 scans liberado!" };
-  }
-  
-  return { ok: false, message: "Senha inválida." };
+// Deliberately fail closed: client-side codes cannot safely grant paid access.
+// Implement server-side validation before re-enabling license redemption.
+export function redeemCode(_code: string): RedeemResult {
+  return {
+    ok: false,
+    message: "A validação de licenças ainda não está disponível. Tente novamente após a ativação da validação no servidor.",
+  };
 }
