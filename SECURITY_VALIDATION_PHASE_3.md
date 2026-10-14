@@ -23,18 +23,24 @@
 - A tentativa de clonar o repositório para executar os comandos localmente falhou porque o ambiente de execução não conseguiu resolver/acessar `github.com`. Nenhum comando npm foi declarado como aprovado.
 - A análise estática da Fase 2 identificou ausência de migrations SQL no repositório e não pôde confirmar políticas RLS, grants, funções remotas ou segredos do painel Supabase.
 
-## Estado dos testes nesta execução
+## Estado dos testes — execução GitHub Actions 38576044820
+
+Execução: https://github.com/freirelg/vigilante-scan/actions/runs/38576044820
 
 | Verificação | Estado | Evidência/observação |
 |---|---|---|
-| `npm ci` | Não executado | Requer checkout e acesso ao registry npm |
-| `npm audit --audit-level=high` | Não executado | Workflow preparado para executar no GitHub Actions |
-| `npm run lint` | Não executado | Workflow preparado para executar no GitHub Actions |
-| `npm run build` | Não executado | Workflow preparado para executar no GitHub Actions |
+| Regeneração do lockfile | Aprovada | Workflow regenerou/confirmou o lockfile e registrou a alteração gerada |
+| `npm ci` | Aprovado | Instalação exata das dependências concluída |
+| Verificação de `.env` rastreado | Aprovada | A verificação passou nesta branch |
+| `npm audit --audit-level=high` | **Falhou** | O audit reportou 40 vulnerabilidades: 1 low, 7 moderate e 32 high. Entre os pacotes sinalizados estão glob, js-yaml, lodash, minimatch, nanoid, postcss e serialize-javascript. Revisar o relatório completo e atualizar dependências de forma compatível; não aplicar `--force` sem avaliar breaking changes. |
+| `npm run lint` | Não executado | Etapa ignorada porque `npm audit` falhou |
+| `npm run build` | Não executado | Etapa ignorada porque `npm audit` falhou |
 | Testes unitários/integrados | Não configurados | `package.json` não possui script `test` |
 | RLS/grants/funções no Supabase | Pendente | Requer acesso autenticado somente leitura ao projeto remoto |
 | Segredos remotos | Pendente | Valores não solicitados nem expostos; revisar nomes e locais no painel |
 | Dados de produção | Não acessados | Nenhuma consulta ou alteração de dados executada |
+
+**Conclusão dos testes:** a pipeline ainda não está aprovada. A instalação e a verificação do arquivo `.env` passaram, mas a auditoria de dependências bloqueou lint e build. Não declarar o projeto validado até corrigir ou justificar os achados e executar novamente todas as etapas.
 
 ## Correções preparadas e próximas correções
 
