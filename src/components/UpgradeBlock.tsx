@@ -1,16 +1,9 @@
 import { useState, useEffect } from "react";
-import { Lock, Sparkles, Crown, Key } from "lucide-react";
+import { Lock, Sparkles, Crown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { 
-  getScanLimit, 
-  getScansUsed, 
-  redeemCode, 
-  getAccessLevel 
-} from "@/lib/edition";
-import { toast } from "sonner";
+import { getScanLimit, getScansUsed } from "@/lib/edition";
 
 interface UpgradeBlockProps {
   title?: string;
@@ -23,32 +16,19 @@ export function UpgradeBlock({
   reason = "limit",
   featureName,
 }: UpgradeBlockProps) {
-  const [code, setCode] = useState("");
   const [used, setUsed] = useState(getScansUsed());
   const [limit, setLimit] = useState(getScanLimit());
-  const [level, setLevel] = useState(getAccessLevel());
-  
+
   useEffect(() => {
     const handleUpdate = () => {
       setUsed(getScansUsed());
       setLimit(getScanLimit());
-      setLevel(getAccessLevel());
     };
     window.addEventListener("freirenet-usage-updated", handleUpdate);
     return () => window.removeEventListener("freirenet-usage-updated", handleUpdate);
   }, []);
 
   const isLimit = reason === "limit";
-
-  const handleRedeem = () => {
-    const result = redeemCode(code);
-    if (result.ok) {
-      toast.success(result.message);
-      setCode("");
-    } else {
-      toast.error(result.message);
-    }
-  };
 
   return (
     <Card className="p-6 bg-card border-border relative overflow-hidden">
@@ -88,30 +68,13 @@ export function UpgradeBlock({
           )}
         </div>
 
-        {/* Password entry for unlocking */}
-        <div className="w-full max-w-sm space-y-3 mb-6">
-          <div className="relative">
-            <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="password"
-              placeholder="Digite a senha para desbloquear"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="pl-10 bg-secondary/50 border-border"
-            />
-          </div>
-          <Button 
-            onClick={handleRedeem}
-            className="w-full gap-2"
-            variant="secondary"
-          >
-            Validar Senha
-          </Button>
-          
-          <p className="text-[10px] text-muted-foreground italic">
-            {level === 0 && "Insira a senha de 50 scans ou de Acesso Livre."}
-            {level === 1 && "Insira a senha de Acesso Livre para libertação total."}
-            {level >= 2 && "Acesso total liberado!"}
+        <div className="w-full max-w-sm rounded-lg border border-border bg-secondary/30 p-4 mb-6 text-left">
+          <p className="text-sm font-semibold text-foreground mb-1">
+            Validação de licenças temporariamente indisponível
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Por segurança, códigos de desbloqueio não são aceitos no navegador.
+            O acesso pago será habilitado quando a validação segura no servidor estiver configurada.
           </p>
         </div>
 
