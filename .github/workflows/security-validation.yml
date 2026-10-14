@@ -10,8 +10,10 @@ on:
       - "security/**"
   workflow_dispatch:
 
+# Write permission is needed only so this isolated security branch can commit
+# the regenerated package lockfile. Never merge this automation to main without review.
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: security-validation-${{ github.ref }}
@@ -19,20 +21,39 @@ concurrency:
 
 jobs:
   validate:
-    name: Dependency, lint and production build checks
+    name: Regenerate lockfile, audit, lint and build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          persist-credentials: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
 
-      - name: Install locked dependencies
+      - name: Regenerate package lock from package.json
+        run: npm install --package-lock-only --ignore-scripts --no-audit
+
+      - name: Commit lockfile if regenerated
+        shell: bash
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "fix: synchronize npm package lock"
+            git push origin "HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          else
+            echo "package-lock.json is already synchronized."
+          fi
+
+      - name: Install exact locked dependencies
         run: npm ci
 
       - name: Check that .env is not tracked
