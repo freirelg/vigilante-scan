@@ -7,7 +7,8 @@ import { VitePWA } from "vite-plugin-pwa";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    // Bind locally by default. Set VITE_DEV_HOST=:: only when a trusted remote preview requires it.
+    host: process.env.VITE_DEV_HOST || "127.0.0.1",
     port: 8080,
   },
   plugins: [
